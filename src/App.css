@@ -1,0 +1,8 @@
+/* App-level styles — layout and minor overrides */
+a { text-decoration: none; color: inherit; }
+
+/* Fade-in animation (used via sx animation prop) */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
