@@ -1,15 +1,18 @@
-﻿import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
     Box, Typography, TextField, IconButton, Fab, Drawer,
-    Fade, Chip, Avatar, Collapse,
+    Fade, Chip, Avatar,
 } from "@mui/material";
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import LightbulbRoundedIcon from "@mui/icons-material/LightbulbRounded";
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import RocketLaunchRoundedIcon from "@mui/icons-material/RocketLaunchRounded";
+import { mentorAPI } from "./api";
+import { useTheme } from "./ThemeContext";
+import { getTokens, ACCENTS } from "./theme/tokens";
+import { ClayCard, GlassPanel, ClayButton, PageHeader, StatTile, SegmentTabs, EmptyState, LoadingState, ChartTooltip } from "./theme/Clay";
 
 const QUICK_PROMPTS = [
     { icon: <LightbulbRoundedIcon sx={{ fontSize: 14 }} />, text: "What skills do I need for AI/ML?", color: "#9b6dff" },
@@ -24,7 +27,7 @@ const AI_RESPONSES = {
 };
 
 const getAIResponse = (message) => {
-    const lowerMsg = message.toLowerCase().trim();
+const lowerMsg = message.toLowerCase().trim();
     
     for (const [key, response] of Object.entries(AI_RESPONSES)) {
         if (lowerMsg.includes(key) || key.includes(lowerMsg)) return response;
@@ -54,24 +57,35 @@ const AIChatbot = ({ domain }) => {
     const [typing, setTyping] = useState(false);
     const messagesEndRef = useRef(null);
 
+    const { darkMode } = useTheme();
+    const t = getTokens(darkMode);
+    const tx = t.text;
+
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages]);
 
-    const sendMessage = (text) => {
+    const sendMessage = async (text) => {
         if (!text.trim()) return;
         const userMsg = { role: "user", text: text.trim() };
+        const history = [...messages, userMsg].map((m) => ({
+            role: m.role === "ai" ? "mentor" : "user",
+            text: m.text,
+        }));
         setMessages(prev => [...prev, userMsg]);
         setInput("");
         setTyping(true);
 
-        setTimeout(() => {
-            const response = getAIResponse(text);
-            setMessages(prev => [...prev, { role: "ai", text: response }]);
+        try {
+            const { data } = await mentorAPI.chat(userMsg.text, history.slice(-10));
+            setMessages(prev => [...prev, { role: "ai", text: data.reply }]);
+        } catch {
+            // Backend offline - fall back to the local canned response
+            setMessages(prev => [...prev, { role: "ai", text: getAIResponse(text) }]);
+        } finally {
             setTyping(false);
-        }, 1200 + Math.random() * 800);
+        }
     };
-
     return (
         <>
             {/* Floating Action Button */}
@@ -91,11 +105,13 @@ const AIChatbot = ({ domain }) => {
 
             {/* Chat Drawer */}
             <Drawer anchor="right" open={open} onClose={() => setOpen(false)}
-                PaperProps={{ sx: { width: 400, maxWidth: "90vw", background: "#08080c", borderLeft: "1px solid rgba(255,255,255,0.08)" } }}
+                PaperProps={{ sx: { width: 400, maxWidth: "90vw",
+                    background: t.glass.panel, backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)",
+                    borderLeft: `1px solid ${t.border.subtle}` } }}
             >
                 <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
                     {/* Header */}
-                    <Box sx={{ p: 2, borderBottom: "1px solid rgba(255,255,255,0.06)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <Box sx={{ p: 2, borderBottom: `1px solid ${t.border.subtle}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                             <Box sx={{ width: 36, height: 36, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(155,109,255,0.2), rgba(79,142,247,0.2))", border: "1px solid rgba(155,109,255,0.3)" }}>
                                 <SmartToyRoundedIcon sx={{ fontSize: 20, color: "#9b6dff" }} />
@@ -105,7 +121,7 @@ const AIChatbot = ({ domain }) => {
                                 <Typography sx={{ fontSize: 10, color: "#3ecf8e" }}>Online</Typography>
                             </Box>
                         </Box>
-                        <IconButton onClick={() => setOpen(false)} sx={{ color: "rgba(255,255,255,0.4)" }}>
+                        <IconButton onClick={() => setOpen(false)} sx={{ color: t.text.secondary }}>
                             <CloseRoundedIcon sx={{ fontSize: 20 }} />
                         </IconButton>
                     </Box>
@@ -115,12 +131,12 @@ const AIChatbot = ({ domain }) => {
                         {messages.map((msg, i) => (
                             <Fade key={i} in timeout={300}>
                                 <Box sx={{ display: "flex", gap: 1, flexDirection: msg.role === "user" ? "row-reverse" : "row" }}>
-                                    <Avatar sx={{ width: 28, height: 28, background: msg.role === "ai" ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : "rgba(255,255,255,0.1)", flexShrink: 0 }}>
+                                    <Avatar sx={{ width: 28, height: 28, background: msg.role === "ai" ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : t.glass.chip, flexShrink: 0 }}>
                                         {msg.role === "ai" ? <SmartToyRoundedIcon sx={{ fontSize: 16 }} /> : <Typography sx={{ fontSize: 12 }}>U</Typography>}
                                     </Avatar>
                                     <Box sx={{ maxWidth: "80%", p: 1.5, borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                                        background: msg.role === "user" ? "linear-gradient(135deg, #4f8ef7, #9b6dff)" : "rgba(255,255,255,0.05)", border: msg.role === "ai" ? "1px solid rgba(255,255,255,0.08)" : "none" }}>
-                                        <Typography sx={{ fontSize: 12, whiteSpace: "pre-wrap", lineHeight: 1.6, color: msg.role === "user" ? "#fff" : "rgba(255,255,255,0.8)" }}>{msg.text}</Typography>
+                                        background: msg.role === "user" ? "linear-gradient(135deg, #4f8ef7, #9b6dff)" : t.glass.inset, border: msg.role === "ai" ? `1px solid ${t.border.subtle}` : "none" }}>
+                                        <Typography sx={{ fontSize: 12, whiteSpace: "pre-wrap", lineHeight: 1.6, color: msg.role === "user" ? "#fff" : t.text.primary }}>{msg.text}</Typography>
                                     </Box>
                                 </Box>
                             </Fade>
@@ -130,7 +146,7 @@ const AIChatbot = ({ domain }) => {
                                 <Avatar sx={{ width: 28, height: 28, background: "linear-gradient(135deg, #9b6dff, #4f8ef7)" }}>
                                     <SmartToyRoundedIcon sx={{ fontSize: 16 }} />
                                 </Avatar>
-                                <Box sx={{ p: 1.5, borderRadius: "14px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)" }}>
+                                <Box sx={{ p: 1.5, borderRadius: "14px", background: t.glass.inset, border: `1px solid ${t.border.subtle}` }}>
                                     <Box sx={{ display: "flex", gap: 0.5 }}>
                                         <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: "#9b6dff", animation: "float 1s ease infinite" }} />
                                         <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: "#4f8ef7", animation: "float 1s ease infinite 0.2s" }} />
@@ -153,12 +169,12 @@ const AIChatbot = ({ domain }) => {
                     )}
 
                     {/* Input */}
-                    <Box sx={{ p: 2, borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+                    <Box sx={{ p: 2, borderTop: `1px solid ${t.border.subtle}` }}>
                         <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
                             <TextField fullWidth size="small" placeholder="Ask me anything..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", color: "#fff", "& fieldset": { borderColor: "rgba(255,255,255,0.1)" }, "&:hover fieldset": { borderColor: "rgba(155,109,255,0.3)" }, "&.Mui-focused fieldset": { borderColor: "#9b6dff" } } }} />
+                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", color: t.text.primary, "& fieldset": { borderColor: t.border.subtle }, "&:hover fieldset": { borderColor: "rgba(155,109,255,0.3)" }, "&.Mui-focused fieldset": { borderColor: "#9b6dff" } } }} />
                             <IconButton onClick={() => sendMessage(input)} disabled={!input.trim()}
-                                sx={{ width: 40, height: 40, borderRadius: "12px", background: input.trim() ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : "rgba(255,255,255,0.05)", color: "#fff", "&:hover": { background: "linear-gradient(135deg, #b08aff, #6ba3ff)" }, "&.Mui-disabled": { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.2)" } }}>
+                                sx={{ width: 40, height: 40, borderRadius: "12px", background: input.trim() ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : t.glass.inset, color: input.trim() ? "#fff" : t.text.secondary, "&:hover": { background: "linear-gradient(135deg, #b08aff, #6ba3ff)" }, "&.Mui-disabled": { background: t.glass.inset, color: t.text.secondary } }}>
                                 <SendRoundedIcon sx={{ fontSize: 18 }} />
                             </IconButton>
                         </Box>

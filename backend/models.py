@@ -29,6 +29,10 @@ class User(Base):
     google_id       = Column(String(255), unique=True, nullable=True)
     oauth_provider  = Column(String(50), nullable=True)    # "google" | None
 
+    # Email verification
+    email_verified   = Column(Boolean, default=False, nullable=False)
+    email_verify_token = Column(String(255), nullable=True, unique=True)
+
     # Profile
     target_career   = Column(String(120), default="AI / ML Engineer")
     learning_domain = Column(String(120), default="AI & Data Science")
@@ -95,3 +99,75 @@ class Assessment(Base):
     created_at      = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="assessments")
+
+
+class SkillReview(Base):
+    """
+    Spaced-repetition state for one skill of one user (SM-2 lite).
+    New table → created automatically by metadata.create_all on startup,
+    so no migration is needed for existing SQLite files.
+    """
+    __tablename__ = "skill_reviews"
+
+    id             = Column(String, primary_key=True, default=gen_uuid)
+    user_id        = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    skill          = Column(String(100), nullable=False)
+    ease           = Column(Float, default=2.5)      # SM-2 easiness factor (>= 1.3)
+    interval_days  = Column(Integer, default=0)      # days until next review
+    reps           = Column(Integer, default=0)      # consecutive correct reviews
+    lapses         = Column(Integer, default=0)      # times forgotten
+    due_date       = Column(String(20), nullable=True)   # ISO date the skill is next due
+    last_score     = Column(Float, default=0)        # last percentage scored
+    reviewed_count = Column(Integer, default=0)
+    updated_at     = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User")
+
+
+class ActivityLog(Base):
+    """Timestamped learning activity — powers real (not synthetic) progress charts."""
+    __tablename__ = "activity_log"
+
+    id         = Column(String, primary_key=True, default=gen_uuid)
+    user_id    = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    date       = Column(String(20), nullable=False)     # ISO date (YYYY-MM-DD)
+    minutes    = Column(Integer, default=0)
+    xp         = Column(Integer, default=0)
+    kind       = Column(String(40), default="practice") # practice | assessment | course | manual
+    detail     = Column(String(255), default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+
+class ChatMessage(Base):
+    """Persisted AI Mentor conversation history."""
+    __tablename__ = "chat_messages"
+
+    id         = Column(String, primary_key=True, default=gen_uuid)
+    user_id    = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    role       = Column(String(20), nullable=False)     # user | mentor
+    content    = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User")
+
+
+class PracticeSession(Base):
+    """
+    An in-flight adaptive practice session. Holds the full questions
+    (with answers) server-side so scoring never trusts the client.
+    """
+    __tablename__ = "practice_sessions"
+
+    id          = Column(String, primary_key=True, default=gen_uuid)
+    user_id     = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    questions   = Column(JSON, nullable=False)     # full question objects + skill tags
+    skill_focus = Column(JSON, default=list)       # [{skill, score, reason}]
+    status      = Column(String(20), default="in_progress")  # in_progress | completed
+    score       = Column(Integer, default=0)
+    total       = Column(Integer, default=0)
+    created_at  = Column(DateTime, default=datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    user = relationship("User")

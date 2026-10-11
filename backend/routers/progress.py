@@ -1,9 +1,11 @@
-﻿from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel
+from datetime import date, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from database import get_session
 from auth import get_current_user
-from models import User
+from models import User, ActivityLog
 
 router = APIRouter(prefix="/progress", tags=["progress"])
 
@@ -12,6 +14,7 @@ class LogActivityRequest(BaseModel):
     minutes: int = 0
 
 
+@router.get("")
 @router.get("/")
 async def get_progress(
     session: AsyncSession = Depends(get_session),
@@ -39,15 +42,36 @@ async def get_progress(
     xp_for_next = level * 500
     xp_progress = min(100, round(((xp - xp_for_current) / max(xp_for_next - xp_for_current, 1)) * 100))
 
-    # Weekly progress (last 6 weeks, computed from skill trend)
-    weekly_data = []
+    # Weekly progress — REAL data from the activity log (last 6 weeks)
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())   # Monday of this week
+    week_keys = []
     for i in range(5, -1, -1):
-        weekly_data.append({
-            "week": f"W{6-i}",
-            "progress": max(5, overall_skill - i * 4),
-            "xpEarned": max(10, xp // 6 - i * 10),
-        })
+        week_keys.append((week_start - timedelta(weeks=i)).isoformat())
 
+    buckets = {k: {"week": f"W{6 - idx}", "progress": 0, "xpEarned": 0, "minutes": 0, "sessions": 0}
+               for idx, k in enumerate(week_keys)}
+
+    logs = await session.execute(
+        select(ActivityLog).where(ActivityLog.user_id == current_user.id)
+    )
+    for log in logs.scalars().all():
+        try:
+            d = date.fromisoformat(log.date)
+        except (ValueError, TypeError):
+            continue
+        ws = (d - timedelta(days=d.weekday())).isoformat()
+        if ws in buckets:
+            buckets[ws]["xpEarned"] += log.xp or 0
+            buckets[ws]["minutes"] += log.minutes or 0
+            buckets[ws]["sessions"] += 1
+
+    # progress % = activity minutes against a 150 min/week target
+    weekly_data = []
+    for k in week_keys:
+        b = buckets[k]
+        b["progress"] = min(100, round((b["minutes"] / 150) * 100))
+        weekly_data.append(b)
     progress_bars = [
         {"title": "Overall Roadmap", "value": min(100, completed_courses * 15 + round(overall_skill * 0.4))},
         {"title": "Technical Skills", "value": overall_skill},

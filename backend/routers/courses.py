@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from database import get_session
@@ -33,6 +33,7 @@ def serialize_course(course: Course, user_skills: dict = None) -> dict:
     }
 
 
+@router.get("")
 @router.get("/")
 async def get_courses(
     domain: str = None,

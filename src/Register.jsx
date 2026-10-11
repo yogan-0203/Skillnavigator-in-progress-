@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
     Box, Typography, TextField, Button,
     Divider, Alert, CircularProgress,
@@ -9,14 +9,20 @@ import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "./AuthContext";
 import { authAPI } from "./api";
 import { useTheme } from "./ThemeContext";
+import { getTokens } from "./theme/tokens";
 
 const Register = () => {
     const navigate = useNavigate();
     const { register } = useAuth();
     const { darkMode } = useTheme();
+    const t = getTokens(darkMode);
     const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [registered, setRegistered] = useState(false);
+    const [verifyState, setVerifyState] = useState(null);
+    const [verifyError, setVerifyError] = useState("");
+    const [verified, setVerified] = useState(false);
 
     const bg = darkMode ? "#030306" : "#f5f5f8";
     const cardBg = darkMode ? "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))" : "linear-gradient(145deg, #ffffff, #f8f8fc)";
@@ -36,12 +42,35 @@ const Register = () => {
         if (form.password.length < 6) { setError("Password must be at least 6 characters."); return; }
         setLoading(true);
         try {
-            await register(form.name, form.email, form.password);
-            navigate("/");
+            const data = await register(form.name, form.email, form.password);
+            const isVerified = Boolean(data?.user?.email_verified);
+            setRegistered(true);
+            setVerified(isVerified);
+            if (!isVerified) {
+                try {
+                    const { data: v } = await authAPI.resendVerification();
+                    setVerifyState({ sent: true, devLink: v.dev_link });
+                } catch {
+                    // register() may already have surfaced a dev_link
+                }
+            }
+            if (isVerified) {
+                navigate("/");
+            }
         } catch (err) {
             setError(err.response?.data?.message || err.response?.data?.detail || "Registration failed. Please try again.");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleResendVerification = async () => {
+        setVerifyError("");
+        try {
+            const { data } = await authAPI.resendVerification();
+            setVerifyState({ sent: true, devLink: data.dev_link });
+        } catch (err) {
+            setVerifyError(err.response?.data?.detail || "Could not resend verification email.");
         }
     };
 
@@ -109,6 +138,39 @@ const Register = () => {
                     <Link to="/login" style={{ color: "#9b6dff", fontWeight: 600, textDecoration: "none" }}>Login</Link>
                 </Typography>
             </Box>
+            {registered && !verified && (
+                <Box sx={{ mt: 3, p: 2, borderRadius: "12px", background: darkMode ? "rgba(255,255,255,0.05)" : "#f8f8fc", border: `1px solid ${t.border.subtle}` }}>
+                    <Alert severity="info" sx={{ mb: 1 }}>
+                        Thanks for registering! Please check your inbox (and spam folder) for the verification email. Your email will be verified automatically.
+                    </Alert>
+                    {verifyState?.devLink && (
+                        <>
+                            <Alert severity="warning">
+                                <Typography variant="body2" sx={{ fontFamily: "monospace", fontSize: 11 }}>
+                                    {verifyState.devLink}
+                                </Typography>
+                            </Alert>
+                            <Button
+                                size="small"
+                                onClick={() => window.open(verifyState.devLink, "_blank")}
+                                sx={{ mt: 0.5 }}
+                            >
+                                Open verification link
+                            </Button>
+                        </>
+                    )}
+                    <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={handleResendVerification}
+                        disabled={verifyState?.sent}
+                        sx={{ mt: 0.5 }}
+                    >
+                        {verifyState?.sent ? "Verification email resent" : "Resend verification email"}
+                    </Button>
+                    {verifyError && <Alert severity="error" sx={{ mt: 1 }}>{verifyError}</Alert>}
+                </Box>
+            )}
         </Box>
     );
 };

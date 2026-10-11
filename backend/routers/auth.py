@@ -8,9 +8,11 @@ Google OAuth flow:
   4. Backend exchanges code → gets user info → upserts User → returns JWT
   5. Frontend receives token in URL hash: /login#token=<jwt>
 """
-import os, uuid
+import os, uuid, secrets
 from datetime import datetime, date
-from fastapi import APIRouter, Depends, HTTPException
+import smtplib
+from email.message import EmailMessage
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +56,62 @@ def user_out(u: User) -> dict:
         "assessmentHistory": u.assessment_history or [],
         "createdAt":       u.created_at.isoformat() if u.created_at else "",
         "oauthProvider":   u.oauth_provider,
+        "email_verified":  u.email_verified,
+    }
+
+
+def send_verification_email(user: User, frontend_url: str = None) -> dict:
+    """Send a verification email.
+
+    Production SMTP settings (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD,
+    SMTP_FROM_EMAIL) are optional. When they are not set, the link is logged
+    and returned through the ``dev_link`` field so the flow can be exercised
+    locally without a live mail server.
+    """
+    if not user.email_verify_token:
+        return {"sent": False, "detail": "No verification token on user"}
+
+    link = (
+        f"{frontend_url or os.getenv('FRONTEND_URL', 'http://localhost:5173')}"
+        f"/?token={user.email_verify_token}"
+    )
+    smtp = _smtp_config()
+    if not smtp:
+        print(f"[DEV VERIFICATION EMAIL] {user.email} -> {link}")
+        return {"sent": True, "dev_link": link}
+
+    try:
+        with smtplib.SMTP(smtp["host"], smtp["port"], timeout=10) as server:
+            server.starttls()
+            if smtp["user"]:
+                server.login(smtp["user"], smtp["password"])
+            msg = EmailMessage()
+            msg["From"] = smtp["from_email"]
+            msg["To"] = user.email
+            msg["Subject"] = "Verify your Skill Navigator account"
+            body = (
+                f"Hi {user.name or 'there'},\n\n"
+                f"Thanks for registering! Please verify your email to activate "
+                f"your account:\n\n{link}\n\n"
+                "If you did not create this account, you can safely ignore this email.\n"
+            )
+            msg.set_content(body)
+            server.send_message(msg)
+        return {"sent": True}
+    except Exception as exc:
+        return {"sent": False, "detail": str(exc)}
+
+
+def _smtp_config():
+    host = os.getenv("SMTP_HOST")
+    if not host:
+        return None
+    return {
+        "host": host,
+        "port": int(os.getenv("SMTP_PORT", "587")),
+        "user": os.getenv("SMTP_USER"),
+        "password": os.getenv("SMTP_PASSWORD"),
+        "from_email": os.getenv("SMTP_FROM_EMAIL") or os.getenv("SMTP_USER"),
     }
 
 
@@ -92,6 +150,49 @@ def _default_skills():
         "Data Structures": 0, "Statistics": 0, "Deep Learning": 0, "NLP": 0,
     }
 
+
+async def _upsert_demo_google_user(code: str, session: AsyncSession) -> User:
+    """Create/update a demo Google user from a mock OAuth code (dev only)."""
+    demo_email = f"demo_{code[:8]}@example.com"
+    google_id  = f"mock_{code[:12]}"
+    name       = "Demo Google User"
+    avatar     = "https://ui-avatars.com/api/?background=4f8ef7&color=fff&name=Demo+User"
+
+    result = await session.execute(
+        select(User).where(
+            (User.google_id == google_id) | (User.email == demo_email)
+        )
+    )
+    user = result.scalar_one_or_none()
+
+    if user:
+        if not user.google_id:
+            user.google_id = google_id
+            user.oauth_provider = "google"
+        if avatar and not user.avatar:
+            user.avatar = avatar
+    else:
+        user = User(
+            id               = str(uuid.uuid4()),
+            name             = name,
+            email            = demo_email,
+            password         = None,
+            google_id        = google_id,
+            oauth_provider   = "google",
+            avatar           = avatar,
+            skills           = _default_skills(),
+            enrolled_courses = [],
+            achievements     = [],
+            assessment_history = [],
+            created_at       = datetime.utcnow(),
+        )
+        session.add(user)
+
+    _update_streak(user)
+    _add_xp(user, 10)
+    await session.commit()
+    await session.refresh(user)
+    return user
 
 # ── Schemas ───────────────────────────────────────────────────────────────
 class RegisterReq(BaseModel):
@@ -134,12 +235,21 @@ async def register(body: RegisterReq, session: AsyncSession = Depends(get_sessio
         assessment_history = [],
         created_at       = datetime.utcnow(),
     )
+    user.email_verify_token = secrets.token_urlsafe(32)
     session.add(user)
     await session.commit()
     await session.refresh(user)
 
     token = create_access_token(user.id)
-    return {"message": "Account created successfully", "token": token, "user": user_out(user)}
+    sent = send_verification_email(user)
+    response = {
+        "message": "Account created successfully. A verification email has been sent.",
+        "token": token,
+        "user": user_out(user),
+    }
+    if sent.get("dev_link"):
+        response["dev_link"] = sent["dev_link"]
+    return response
 
 
 # ── Email / password login ────────────────────────────────────────────────
@@ -152,6 +262,8 @@ async def login(body: LoginReq, session: AsyncSession = Depends(get_session)):
         raise HTTPException(401, "Invalid email or password")
     if not verify_password(body.password, user.password):
         raise HTTPException(401, "Invalid email or password")
+    if not user.email_verified:
+        raise HTTPException(403, "Email not verified. Please verify your email before logging in.")
 
     _update_streak(user)
     _add_xp(user, 10)   # daily login bonus
@@ -224,6 +336,75 @@ async def update_profile(
     return {"message": "Profile updated"}
 
 
+# ── Email verification ────────────────────────────────────────────────────
+class VerifyEmailReq(BaseModel):
+    token: str
+
+
+@router.post("/verify-email")
+async def verify_email(body: VerifyEmailReq, session: AsyncSession = Depends(get_session)):
+    """Verify a user's email using the token sent in their verification email."""
+    if not body.token or len(body.token) < 16:
+        raise HTTPException(400, "A valid verification token is required")
+    result = await session.execute(
+        select(User).where(User.email_verify_token == body.token)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(400, "Invalid or expired verification token")
+    if user.email_verified:
+        return {"message": "Email already verified", "user": user_out(user)}
+    user.email_verified = True
+    user.email_verify_token = None
+    await session.commit()
+    await session.refresh(user)
+    return {"message": "Email verified successfully", "user": user_out(user)}
+
+
+@router.get("/verify-email")
+async def verify_email_get(
+    token: str = Query(min_length=16, strip_whitespace=True),
+    session: AsyncSession = Depends(get_session),
+):
+    """Handle a direct verification link click: GET /auth/verify-email?token=..."""
+    if not token:
+        raise HTTPException(400, "verification token is required")
+    result = await session.execute(
+        select(User).where(User.email_verify_token == token)
+    )
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(400, "Invalid or expired verification token")
+    if user.email_verified:
+        return {"message": "Email already verified", "user": user_out(user)}
+    user.email_verified = True
+    user.email_verify_token = None
+    await session.commit()
+    await session.refresh(user)
+    return {"message": "Email verified successfully", "user": user_out(user)}
+
+
+@router.post("/resend-verification")
+async def resend_verification(
+    current_user: User = Depends(get_current_user),
+    session: AsyncSession = Depends(get_session),
+):
+    """Resend the verification email (requires a logged-in user)."""
+    if current_user.email_verified:
+        return {"message": "Email already verified"}
+    if not current_user.email_verify_token:
+        current_user.email_verify_token = secrets.token_urlsafe(32)
+        await session.commit()
+        await session.refresh(current_user)
+    sent = send_verification_email(current_user)
+    if not sent.get("sent"):
+        raise HTTPException(500, sent.get("detail", "Failed to send verification email"))
+    detail = {"message": "Verification email resent"}
+    if sent.get("dev_link"):
+        detail["dev_link"] = sent["dev_link"]
+    return detail
+
+
 # ── Google OAuth ─────────────────────────────────────────────────────────
 
 # Detect placeholder/demo credentials
@@ -278,47 +459,7 @@ async def google_mock_callback(
     Creates / updates a demo Google user and redirects to the frontend
     with a JWT token in the URL hash — just like the real flow.
     """
-    demo_email = f"demo_{code[:8]}@example.com"
-    google_id  = f"mock_{code[:12]}"
-    name       = "Demo Google User"
-    avatar     = "https://ui-avatars.com/api/?background=4f8ef7&color=fff&name=Demo+User"
-
-    # Upsert user by google_id or email
-    result = await session.execute(
-        select(User).where(
-            (User.google_id == google_id) | (User.email == demo_email)
-        )
-    )
-    user = result.scalar_one_or_none()
-
-    if user:
-        if not user.google_id:
-            user.google_id = google_id
-            user.oauth_provider = "google"
-        if avatar and not user.avatar:
-            user.avatar = avatar
-    else:
-        user = User(
-            id               = str(uuid.uuid4()),
-            name             = name,
-            email            = demo_email,
-            password         = None,
-            google_id        = google_id,
-            oauth_provider   = "google",
-            avatar           = avatar,
-            skills           = _default_skills(),
-            enrolled_courses = [],
-            achievements     = [],
-            assessment_history = [],
-            created_at       = datetime.utcnow(),
-        )
-        session.add(user)
-
-    _update_streak(user)
-    _add_xp(user, 10)
-    await session.commit()
-    await session.refresh(user)
-
+    user = await _upsert_demo_google_user(code, session)
     jwt_token = create_access_token(user.id)
     return _make_google_redirect(jwt_token)
 
@@ -331,12 +472,9 @@ async def google_callback(code: str, session: AsyncSession = Depends(get_session
     create a JWT, then redirect the frontend with token in URL hash.
     """
     if _IS_DEMO_OAUTH:
-        raise HTTPException(
-            501,
-            "Real Google OAuth is not configured. The mock flow is available at "
-            "/api/auth/google/mock. Set real GOOGLE_CLIENT_ID and "
-            "GOOGLE_CLIENT_SECRET in backend/.env to use this endpoint.",
-        )
+        user = await _upsert_demo_google_user(code, session)
+        jwt_token = create_access_token(user.id)
+        return _make_google_redirect(jwt_token)
 
     if not GOOGLE_CLIENT_ID:
         raise HTTPException(501, "Google OAuth not configured")

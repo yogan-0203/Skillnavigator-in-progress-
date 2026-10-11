@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
     Box, Typography, TextField, Button,
     Divider, Alert, CircularProgress,
@@ -18,6 +18,7 @@ const Login = () => {
     const [form, setForm] = useState({ email: "", password: "" });
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
+    const [loginUser, setLoginUser] = useState(null);
 
     const bg = darkMode ? "#030306" : "#f5f5f8";
     const cardBg = darkMode ? "linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))" : "linear-gradient(145deg, #ffffff, #f8f8fc)";
@@ -35,8 +36,13 @@ const Login = () => {
         if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
         setLoading(true);
         try {
-            await login(form.email, form.password);
-            navigate("/");
+            const data = await login(form.email, form.password);
+            setLoginUser(data?.user);
+            if (data?.user?.email_verified === false) {
+                setError("Please verify your email before continuing.");
+            } else {
+                navigate("/");
+            }
         } catch (err) {
             setError(err.response?.data?.message || err.response?.data?.detail || "Login failed. Please try again.");
         } finally {
@@ -91,6 +97,12 @@ const Login = () => {
                     sx={{ height: 50, borderRadius: "13px", background: "linear-gradient(135deg, #4f8ef7, #9b6dff)", color: "#fff", fontWeight: 700, textTransform: "none", fontSize: 15, "&:hover": { background: "linear-gradient(135deg, #6ba3ff, #b08aff)" }, "&:disabled": { opacity: 0.6 } }}>
                     {loading ? <CircularProgress size={22} sx={{ color: "#fff" }} /> : "Login"}
                 </Button>
+
+                {loginUser?.email_verified === false && (
+                    <Alert severity="info" sx={{ mb: 2, borderRadius: "12px", backgroundColor: "rgba(247,96,96,0.06)", border: "1px solid rgba(247,96,96,0.15)", color: "#f76060" }}>
+                        Please verify your email before continuing. Check your inbox for the verification link.
+                    </Alert>
+                )}
 
                 <Divider sx={{ my: 3, borderColor: darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)", "&::before,&::after": { borderColor: darkMode ? "rgba(255,255,255,0.07)" : "rgba(0,0,0,0.08)" } }}>
                     <Typography sx={{ fontSize: 10, color: textSecondary }}>OR</Typography>

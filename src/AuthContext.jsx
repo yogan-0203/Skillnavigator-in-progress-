@@ -37,7 +37,19 @@ export const AuthProvider = ({ children }) => {
             }
             try {
                 const { data } = await authAPI.me();
-                setUser(data.user);
+                let user = data.user;
+                // If a verification link was opened directly (e.g. dev mode), verify it
+                // before the app continues.
+                const tokenParam = window.location.search.match(/[?&]token=([^&]+)/);
+                if (user.email_verified === false && tokenParam) {
+                    try {
+                        const { data: v } = await authAPI.verifyEmail(tokenParam[1]);
+                        user = v.user;
+                        // Remove the param so the app does not re-verify it
+                        window.history.replaceState(null, "", window.location.pathname);
+                    } catch {}
+                }
+                setUser(user);
             } catch {
                 // Stale/invalid token — auto recover with demo login
                 localStorage.removeItem("sn_token");

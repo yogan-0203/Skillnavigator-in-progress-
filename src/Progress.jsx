@@ -13,18 +13,19 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { useNavigate } from "react-router-dom";
 import { progressAPI } from "./api";
 import { useAuth } from "./AuthContext";
+import { useTheme } from "./ThemeContext";
+import { getTokens, ACCENTS } from "./theme/tokens";
+import { ClayCard, GlassPanel, ClayButton, PageHeader, StatTile, SegmentTabs, EmptyState, LoadingState, ChartTooltip } from "./theme/Clay";
 
-const card = {
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "20px",
-    background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))",
-    boxShadow: "0 0 0 1px rgba(255,255,255,0.012), 0 20px 50px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
-};
 
 const CustomTooltip = ({ active, payload, label }) => {
+    const { darkMode } = useTheme();
+    const t = getTokens(darkMode);
+    const tx = t.text;
+    const card = { border: `1px solid ${t.border.subtle}`, borderRadius: "20px", background: t.glass.face };
     if (active && payload && payload.length) {
         return (
-            <Box sx={{ background:"rgba(12,12,18,0.96)", border:"1px solid rgba(255,255,255,0.1)",
+            <Box sx={{ background: `${t.glass.panel}`, border: `1px solid ${t.border.subtle}`,
                 borderRadius:"12px", p:2 }}>
                 <Typography sx={{ fontSize:11, fontWeight:700, mb:0.5 }}>{label}</Typography>
                 {payload.map((p) => (
@@ -60,7 +61,7 @@ const Progress = () => {
 
     if (loading) return (
         <Box sx={{ display:"flex", alignItems:"center", justifyContent:"center", height:"80vh" }}>
-            <CircularProgress sx={{ color:"rgba(255,255,255,0.3)" }} />
+            <CircularProgress sx={{ color: t.text.secondary }} />
         </Box>
     );
 
@@ -74,19 +75,19 @@ const Progress = () => {
     const skillEntries = Object.entries(skills).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]);
 
     return (
-        <Box sx={{ width:"100%", minHeight:"100%", color:"#fff", pb:6, animation:"fadeIn 0.4s ease" }}>
+        <Box className="stagger" sx={{ width: "100%", minHeight: "100%", color: t.text.primary, pb:6, animation:"fadeIn 0.4s ease" }}>
 
             {/* Header */}
             <Box sx={{ mb:4 }}>
-                <Typography sx={{ fontSize:10, letterSpacing:2.5, color:"rgba(255,255,255,0.28)", mb:1 }}>
+                <Typography sx={{ fontSize:10, letterSpacing:2.5, color: t.text.muted, mb:1 }}>
                     LEARNING ANALYTICS
                 </Typography>
                 <Typography sx={{ fontSize:32, fontWeight:800,
-                    background:"linear-gradient(135deg, #fff, rgba(62,207,142,0.8))",
+                    background: t.dark ? "linear-gradient(135deg, #fff, rgba(62,207,142,0.8))" : `linear-gradient(135deg, ${t.text.primary}, #3ecf8e)`,
                     WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                     Progress
                 </Typography>
-                <Typography sx={{ fontSize:13, color:"rgba(255,255,255,0.35)", mt:1 }}>
+                <Typography sx={{ fontSize:13, color: t.text.muted, mt:1 }}>
                     Track your learning journey, XP, level, and skill growth.
                 </Typography>
             </Box>
@@ -104,7 +105,7 @@ const Progress = () => {
                             <StarRoundedIcon sx={{ color:"#f7934c", fontSize:26 }} />
                         </Box>
                         <Box>
-                            <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.35)", letterSpacing:1 }}>
+                            <Typography sx={{ fontSize:11, color: t.text.muted, letterSpacing:1 }}>
                                 CURRENT LEVEL
                             </Typography>
                             <Typography sx={{ fontSize:28, fontWeight:800, color:"#f7934c" }}>
@@ -114,12 +115,12 @@ const Progress = () => {
                     </Box>
                     <Box sx={{ textAlign:"right" }}>
                         <Typography sx={{ fontSize:24, fontWeight:800 }}>{overview.xp || user?.xp || 0}</Typography>
-                        <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>Total XP</Typography>
+                        <Typography sx={{ fontSize:11, color: t.text.muted }}>Total XP</Typography>
                     </Box>
                 </Box>
 
                 <Box sx={{ display:"flex", justifyContent:"space-between", mb:1 }}>
-                    <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>
+                    <Typography sx={{ fontSize:11, color: t.text.muted }}>
                         Progress to Level {(overview.level || 1) + 1}
                     </Typography>
                     <Typography sx={{ fontSize:11, color:"#f7934c" }}>
@@ -128,7 +129,7 @@ const Progress = () => {
                 </Box>
                 <LinearProgress variant="determinate" value={overview.xpProgress || 0}
                     sx={{ height:8, borderRadius:10,
-                        backgroundColor:"rgba(255,255,255,0.06)",
+                        backgroundColor: `${t.glass.inset}`,
                         "& .MuiLinearProgress-bar": { background:"linear-gradient(90deg,#f7934c,#f76060)", borderRadius:10 } }} />
             </Box>
 
@@ -142,7 +143,7 @@ const Progress = () => {
                 ].map((s) => (
                     <Box key={s.label} sx={{ ...card, p:2.5 }}>
                         {s.icon}
-                        <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.3)", mt:1.5, letterSpacing:0.5 }}>
+                        <Typography sx={{ fontSize:11, color: t.text.secondary, mt:1.5, letterSpacing:0.5 }}>
                             {s.label.toUpperCase()}
                         </Typography>
                         <Typography sx={{ fontSize:28, fontWeight:800, mt:0.5, color:s.color }}>
@@ -159,7 +160,7 @@ const Progress = () => {
                     {progressBars.map((pb) => (
                         <Box key={pb.title} sx={{ mb:2.5 }}>
                             <Box sx={{ display:"flex", justifyContent:"space-between", mb:0.8 }}>
-                                <Typography sx={{ fontSize:13, color:"rgba(255,255,255,0.65)" }}>{pb.title}</Typography>
+                                <Typography sx={{ fontSize:13, color: t.text.secondary }}>{pb.title}</Typography>
                                 <Typography sx={{ fontSize:12, fontWeight:700,
                                     color: pb.value >= 70 ? "#3ecf8e" : pb.value >= 40 ? "#4f8ef7" : "#f7934c" }}>
                                     {pb.value}%
@@ -167,7 +168,7 @@ const Progress = () => {
                             </Box>
                             <LinearProgress variant="determinate" value={pb.value}
                                 sx={{ height:7, borderRadius:10,
-                                    backgroundColor:"rgba(255,255,255,0.06)",
+                                    backgroundColor: `${t.glass.inset}`,
                                     "& .MuiLinearProgress-bar": {
                                         background: pb.value >= 70
                                             ? "linear-gradient(90deg,#3ecf8e,#38c9d8)"
@@ -196,10 +197,10 @@ const Progress = () => {
                                         <stop offset="95%" stopColor="#4f8ef7" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
-                                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                <XAxis dataKey="week" tick={{ fill:"rgba(255,255,255,0.35)", fontSize:10 }}
+                                <CartesianGrid stroke={t.chart.grid} vertical={false} />
+                                <XAxis dataKey="week" tick={{ fill: t.chart.tickFaint, fontSize:10 }}
                                     axisLine={false} tickLine={false} />
-                                <YAxis domain={[0,100]} tick={{ fill:"rgba(255,255,255,0.3)", fontSize:10 }}
+                                <YAxis domain={[0,100]} tick={{ fill: t.chart.tickFaint, fontSize:10 }}
                                     axisLine={false} tickLine={false} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Area type="monotone" dataKey="progress" name="Progress"
@@ -221,9 +222,9 @@ const Progress = () => {
                                     layout="vertical"
                                     margin={{ top:0, right:10, left:0, bottom:0 }}>
                                     <XAxis type="number" domain={[0,100]}
-                                        tick={{ fill:"rgba(255,255,255,0.3)", fontSize:9 }} axisLine={false} tickLine={false} />
+                                        tick={{ fill: t.chart.tickFaint, fontSize:9 }} axisLine={false} tickLine={false} />
                                     <YAxis type="category" dataKey="name"
-                                        tick={{ fill:"rgba(255,255,255,0.45)", fontSize:10 }} axisLine={false} tickLine={false} width={65} />
+                                        tick={{ fill: t.chart.tick, fontSize:10 }} axisLine={false} tickLine={false} width={65} />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Bar dataKey="value" name="Score" fill="#9b6dff"
                                         radius={[0,5,5,0]} isAnimationActive={false} />
@@ -241,7 +242,7 @@ const Progress = () => {
                         <Typography sx={{ fontSize:18, fontWeight:600 }}>Recent Assessments</Typography>
                         <Button endIcon={<ArrowForwardRoundedIcon />}
                             onClick={() => navigate("/courses")}
-                            sx={{ color:"rgba(255,255,255,0.4)", textTransform:"none", fontSize:11 }}>
+                            sx={{ color: t.text.secondary, textTransform:"none", fontSize:11 }}>
                             Take More
                         </Button>
                     </Box>
@@ -249,11 +250,11 @@ const Progress = () => {
                         {assessments.recent.map((a, i) => (
                             <Box key={i} sx={{ display:"flex", justifyContent:"space-between",
                                 alignItems:"center", p:2, borderRadius:"13px",
-                                backgroundColor:"rgba(255,255,255,0.025)",
-                                border:"1px solid rgba(255,255,255,0.06)" }}>
+                                backgroundColor: t.glass.inset,
+                                border: `1px solid ${t.border.subtle}` }}>
                                 <Box>
                                     <Typography sx={{ fontSize:13, fontWeight:600 }}>{a.topic}</Typography>
-                                    <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.35)", mt:0.3 }}>
+                                    <Typography sx={{ fontSize:10, color: t.text.muted, mt:0.3 }}>
                                         {a.score}/{a.total} correct
                                     </Typography>
                                 </Box>
@@ -263,7 +264,7 @@ const Progress = () => {
                                         {a.percentage}%
                                     </Typography>
                                     {a.date && (
-                                        <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.25)" }}>
+                                        <Typography sx={{ fontSize:10, color: t.text.muted }}>
                                             {new Date(a.date).toLocaleDateString()}
                                         </Typography>
                                     )}

@@ -9,13 +9,10 @@ import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "./AuthContext";
+import { useTheme } from "./ThemeContext";
+import { getTokens, ACCENTS } from "./theme/tokens";
+import { ClayCard, GlassPanel, ClayButton, PageHeader, StatTile, SegmentTabs, EmptyState, LoadingState, ChartTooltip } from "./theme/Clay";
 
-const card = {
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "20px",
-    background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))",
-    boxShadow: "0 0 0 1px rgba(255,255,255,0.012), 0 20px 50px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
-};
 
 const CAREERS = [
     {
@@ -95,6 +92,10 @@ const DEMAND_COLOR = {
 };
 
 const CareerExplorer = () => {
+    const { darkMode } = useTheme();
+    const t = getTokens(darkMode);
+    const tx = t.text;
+    const card = { border: `1px solid ${t.border.subtle}`, borderRadius: "20px", background: t.glass.face };
     const navigate = useNavigate();
     const { user } = useAuth();
     const [selected, setSelected] = useState(null);
@@ -113,20 +114,20 @@ const CareerExplorer = () => {
     };
 
     return (
-        <Box sx={{ width:"100%", minHeight:"100%", color:"#fff", pb:6, animation:"fadeIn 0.4s ease" }}>
+        <Box className="stagger" sx={{ width: "100%", minHeight: "100%", color: t.text.primary, pb:6, animation:"fadeIn 0.4s ease" }}>
 
             {/* Header */}
             <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", mb:4 }}>
                 <Box>
-                    <Typography sx={{ fontSize:10, letterSpacing:2.5, color:"rgba(255,255,255,0.28)", mb:1 }}>
+                    <Typography sx={{ fontSize:10, letterSpacing:2.5, color: t.text.muted, mb:1 }}>
                         AI CAREER INTELLIGENCE
                     </Typography>
                     <Typography sx={{ fontSize:32, fontWeight:800,
-                        background:"linear-gradient(135deg, #fff, rgba(56,201,216,0.8))",
+                        background: t.dark ? "linear-gradient(135deg, #fff, rgba(56,201,216,0.8))" : `linear-gradient(135deg, ${t.text.primary}, #38c9d8)`,
                         WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                         Career Explorer
                     </Typography>
-                    <Typography sx={{ fontSize:13, color:"rgba(255,255,255,0.35)", mt:1 }}>
+                    <Typography sx={{ fontSize:13, color: t.text.muted, mt:1 }}>
                         Discover career paths that match your skills. Click any card to see prerequisites.
                     </Typography>
                 </Box>
@@ -147,10 +148,10 @@ const CareerExplorer = () => {
                             onClick={() => setSelected(isSelected ? null : career.title)}
                             sx={{
                                 ...card, p:3, cursor:"pointer",
-                                border: isSelected ? `1px solid ${career.color}40` : "1px solid rgba(255,255,255,0.08)",
+                                border: isSelected ? `1px solid ${career.color}40` : `1px solid ${t.border.subtle}`,
                                 background: isSelected
-                                    ? `linear-gradient(145deg, ${career.color}10, rgba(255,255,255,0.01))`
-                                    : "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))",
+                                    ? `linear-gradient(145deg, ${career.color}10, ${t.glass.inset})`
+                                    : t.glass.face,
                                 transition:"all 0.2s ease",
                                 "&:hover": {
                                     borderColor: `${career.color}40`,
@@ -168,7 +169,7 @@ const CareerExplorer = () => {
                                                     color: DEMAND_COLOR[career.demand] || "#fff",
                                                     backgroundColor:`${DEMAND_COLOR[career.demand]}15`,
                                                     border:`1px solid ${DEMAND_COLOR[career.demand]}30` }} />
-                                            <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.35)", pt:0.3 }}>
+                                            <Typography sx={{ fontSize:10, color: t.text.muted, pt:0.3 }}>
                                                 {career.salary}
                                             </Typography>
                                         </Box>
@@ -178,26 +179,26 @@ const CareerExplorer = () => {
                                     <Typography sx={{ fontSize:32, fontWeight:800, color: career.color }}>
                                         {match}%
                                     </Typography>
-                                    <Typography sx={{ fontSize:9, color:"rgba(255,255,255,0.3)" }}>match</Typography>
+                                    <Typography sx={{ fontSize:9, color: t.text.secondary }}>match</Typography>
                                 </Box>
                             </Box>
 
                             <LinearProgress variant="determinate" value={match}
                                 sx={{ height:4, borderRadius:10, mb:2,
-                                    backgroundColor:"rgba(255,255,255,0.06)",
+                                    backgroundColor: `${t.glass.inset}`,
                                     "& .MuiLinearProgress-bar": {
                                         background:`linear-gradient(90deg, ${career.color}, ${career.color}88)`,
                                         borderRadius:10,
                                     }}} />
 
-                            <Typography sx={{ fontSize:12, color:"rgba(255,255,255,0.4)", lineHeight:1.6 }}>
+                            <Typography sx={{ fontSize:12, color: t.text.secondary, lineHeight:1.6 }}>
                                 {career.description}
                             </Typography>
 
                             {/* Expanded prerequisite details */}
                             {isSelected && (
                                 <Box sx={{ mt:2.5, animation:"fadeIn 0.25s ease" }}>
-                                    <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.28)", mb:1.5, letterSpacing:1 }}>
+                                    <Typography sx={{ fontSize:10, color: t.text.muted, mb:1.5, letterSpacing:1 }}>
                                         REQUIRED SKILLS
                                     </Typography>
                                     <Box sx={{ display:"flex", flexDirection:"column", gap:1.2 }}>
@@ -210,21 +211,21 @@ const CareerExplorer = () => {
                                                         <Box sx={{ display:"flex", alignItems:"center", gap:0.8 }}>
                                                             {met
                                                                 ? <CheckCircleRoundedIcon sx={{ fontSize:13, color:"#3ecf8e" }} />
-                                                                : <LockRoundedIcon sx={{ fontSize:13, color:"rgba(255,255,255,0.3)" }} />
+                                                                : <LockRoundedIcon sx={{ fontSize:13, color: t.text.secondary }} />
                                                             }
-                                                            <Typography sx={{ fontSize:11, color: met ? "#fff" : "rgba(255,255,255,0.5)" }}>
+                                                            <Typography sx={{ fontSize:11, color: met ? t.text.primary : t.text.secondary }}>
                                                                 {skill}
                                                             </Typography>
                                                         </Box>
                                                         <Typography sx={{ fontSize:10,
-                                                            color: met ? "#3ecf8e" : "rgba(255,255,255,0.35)" }}>
+                                                            color: met ? "#3ecf8e" : t.text.muted }}>
                                                             {current}% / {req}%
                                                         </Typography>
                                                     </Box>
                                                     <Box sx={{ position:"relative", height:4, borderRadius:10,
-                                                        backgroundColor:"rgba(255,255,255,0.06)" }}>
+                                                        backgroundColor: `${t.glass.inset}` }}>
                                                         <Box sx={{ position:"absolute", height:"100%", borderRadius:10,
-                                                            width:`${req}%`, backgroundColor: met ? "#3ecf8e30" : "rgba(255,255,255,0.04)" }} />
+                                                            width:`${req}%`, backgroundColor: met ? "#3ecf8e30" : (darkMode ? "rgba(255,255,255,0.04)" : "rgba(22,22,42,0.05)") }} />
                                                         <Box sx={{ position:"absolute", height:"100%", borderRadius:10,
                                                             width:`${current}%`,
                                                             background: met ? "linear-gradient(90deg,#3ecf8e,#38c9d8)" : `linear-gradient(90deg,${career.color},${career.color}66)` }} />
@@ -246,9 +247,9 @@ const CareerExplorer = () => {
                                         </Button>
                                         <Button size="small" variant="outlined"
                                             onClick={(e) => { e.stopPropagation(); navigate("/gap-analysis"); }}
-                                            sx={{ textTransform:"none", fontSize:11, color:"rgba(255,255,255,0.5)",
-                                                borderColor:"rgba(255,255,255,0.1)", borderRadius:"10px",
-                                                "&:hover": { borderColor:"rgba(255,255,255,0.2)", backgroundColor:"rgba(255,255,255,0.04)" } }}>
+                                            sx={{ textTransform:"none", fontSize:11, color: t.text.secondary,
+                                                borderColor: `${t.border.subtle}`, borderRadius:"10px",
+                                                "&:hover": { borderColor: `${t.border.medium}`, backgroundColor: `${t.glass.inset}` } }}>
                                             Gap Analysis
                                         </Button>
                                     </Box>
@@ -262,8 +263,8 @@ const CareerExplorer = () => {
             {/* Tip */}
             <Box sx={{ ...card, p:3, display:"flex", alignItems:"center", gap:2 }}>
                 <AutoAwesomeRoundedIcon sx={{ color:"#9b6dff", flexShrink:0 }} />
-                <Typography sx={{ fontSize:12, color:"rgba(255,255,255,0.4)", lineHeight:1.7 }}>
-                    <strong style={{ color:"rgba(255,255,255,0.7)" }}>Tip:</strong> Match percentages are calculated from your current skill scores.
+                <Typography sx={{ fontSize:12, color: t.text.secondary, lineHeight:1.7 }}>
+                    <strong style={{ color: t.text.primary }}>Tip:</strong> Match percentages are calculated from your current skill scores.
                     Take assessments on the Courses page to improve your scores and unlock better career matches.
                 </Typography>
             </Box>

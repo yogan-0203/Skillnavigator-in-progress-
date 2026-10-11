@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends
 from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_session
@@ -9,6 +9,7 @@ from models import User
 router = APIRouter(prefix="/achievements", tags=["achievements"])
 
 
+@router.get("")
 @router.get("/")
 async def get_achievements(
     session: AsyncSession = Depends(get_session),

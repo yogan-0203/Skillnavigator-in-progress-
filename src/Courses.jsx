@@ -13,13 +13,10 @@ import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
 import StarRoundedIcon from "@mui/icons-material/StarRounded";
 import { coursesAPI, assessmentAPI } from "./api";
 import { useAuth } from "./AuthContext";
+import { useTheme } from "./ThemeContext";
+import { getTokens, ACCENTS } from "./theme/tokens";
+import { ClayCard, GlassPanel, ClayButton, PageHeader, StatTile, SegmentTabs, EmptyState, LoadingState, ChartTooltip } from "./theme/Clay";
 
-const card = {
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "20px",
-    background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))",
-    boxShadow: "0 0 0 1px rgba(255,255,255,0.012), 0 20px 50px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
-};
 
 const LEVEL_COLOR = {
     Beginner:     { color:"#3ecf8e", bg:"rgba(62,207,142,0.12)", border:"rgba(62,207,142,0.25)" },
@@ -28,6 +25,10 @@ const LEVEL_COLOR = {
 };
 
 const Courses = () => {
+    const { darkMode } = useTheme();
+    const t = getTokens(darkMode);
+    const tx = t.text;
+    const card = { border: `1px solid ${t.border.subtle}`, borderRadius: "20px", background: t.glass.face };
     const { user, refreshUser } = useAuth();
     const [courses, setCourses] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -112,27 +113,27 @@ const Courses = () => {
 
     if (loading) return (
         <Box sx={{ display:"flex", alignItems:"center", justifyContent:"center", height:"80vh" }}>
-            <CircularProgress sx={{ color:"rgba(255,255,255,0.3)" }} />
+            <CircularProgress sx={{ color: t.text.secondary }} />
         </Box>
     );
 
     const enrolledIds = new Set(user?.enrolledCourses?.map(ec => ec.courseId?.toString()));
 
     return (
-        <Box sx={{ width:"100%", minHeight:"100%", color:"#fff", pb:6, animation:"fadeIn 0.4s ease" }}>
+        <Box className="stagger" sx={{ width: "100%", minHeight: "100%", color: t.text.primary, pb:6, animation:"fadeIn 0.4s ease" }}>
 
             {/* Header */}
             <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", mb:4 }}>
                 <Box>
-                    <Typography sx={{ fontSize:10, letterSpacing:2.5, color:"rgba(255,255,255,0.28)", mb:1 }}>
+                    <Typography sx={{ fontSize:10, letterSpacing:2.5, color: t.text.muted, mb:1 }}>
                         LEARNING RESOURCES
                     </Typography>
                     <Typography sx={{ fontSize:32, fontWeight:800,
-                        background:"linear-gradient(135deg, #fff, rgba(79,142,247,0.8))",
+                        background: t.dark ? "linear-gradient(135deg, #fff, rgba(79,142,247,0.8))" : `linear-gradient(135deg, ${t.text.primary}, #4f8ef7)`,
                         WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                         Courses
                     </Typography>
-                    <Typography sx={{ fontSize:13, color:"rgba(255,255,255,0.35)", mt:1 }}>
+                    <Typography sx={{ fontSize:13, color: t.text.muted, mt:1 }}>
                         Enrol in courses, check prerequisites, and take AI skill tests.
                     </Typography>
                 </Box>
@@ -145,14 +146,14 @@ const Courses = () => {
             {/* Level filter */}
             <Box sx={{ display:"flex", gap:1, mb:3 }}>
                 {["All","Beginner","Intermediate","Advanced"].map((lvl) => {
-                    const cfg = LEVEL_COLOR[lvl] || { color:"rgba(255,255,255,0.5)", bg:"rgba(255,255,255,0.05)", border:"rgba(255,255,255,0.1)" };
+                    const cfg = LEVEL_COLOR[lvl] || { color: t.text.secondary, bg: t.glass.chip, border: t.border.medium };
                     return (
                         <Button key={lvl} size="small" onClick={() => setFilter(lvl)}
                             sx={{
                                 textTransform:"none", fontSize:12, borderRadius:"10px", px:2.5,
                                 backgroundColor: filter === lvl ? cfg.bg : "transparent",
-                                color: filter === lvl ? cfg.color : "rgba(255,255,255,0.4)",
-                                border: filter === lvl ? `1px solid ${cfg.border}` : "1px solid rgba(255,255,255,0.08)",
+                                color: filter === lvl ? cfg.color : t.text.secondary,
+                                border: filter === lvl ? `1px solid ${cfg.border}` : `1px solid ${t.border.subtle}`,
                                 "&:hover": { backgroundColor: cfg.bg },
                             }}>
                             {lvl}
@@ -174,7 +175,7 @@ const Courses = () => {
                                 ...card, p:3,
                                 opacity: !course.prerequisitesMet && !isEnrolled ? 0.75 : 1,
                                 transition:"all 0.2s ease",
-                                "&:hover": { borderColor:"rgba(255,255,255,0.14)", transform:"translateY(-2px)" },
+                                "&:hover": { borderColor: `${t.border.subtle}`, transform:"translateY(-2px)" },
                             }}>
                             {/* Header row */}
                             <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", mb:2 }}>
@@ -182,7 +183,7 @@ const Courses = () => {
                                     <Typography sx={{ fontSize:15, fontWeight:700, lineHeight:1.4 }}>
                                         {course.title}
                                     </Typography>
-                                    <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.35)", mt:0.5 }}>
+                                    <Typography sx={{ fontSize:11, color: t.text.muted, mt:0.5 }}>
                                         {course.domain} • {course.duration}
                                     </Typography>
                                 </Box>
@@ -192,14 +193,14 @@ const Courses = () => {
                             </Box>
 
                             {/* Description */}
-                            <Typography sx={{ fontSize:12, color:"rgba(255,255,255,0.4)", lineHeight:1.6, mb:2 }}>
+                            <Typography sx={{ fontSize:12, color: t.text.secondary, lineHeight:1.6, mb:2 }}>
                                 {course.description?.slice(0, 100)}...
                             </Typography>
 
                             {/* Rating */}
                             <Box sx={{ display:"flex", alignItems:"center", gap:0.5, mb:2 }}>
                                 <StarRoundedIcon sx={{ fontSize:13, color:"#f7934c" }} />
-                                <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.5)" }}>
+                                <Typography sx={{ fontSize:11, color: t.text.secondary }}>
                                     {course.rating} • {course.xpReward} XP reward
                                 </Typography>
                             </Box>
@@ -207,7 +208,7 @@ const Courses = () => {
                             {/* Prerequisites */}
                             {course.prerequisites?.length > 0 && (
                                 <Box sx={{ mb:2 }}>
-                                    <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.28)", mb:1, letterSpacing:1 }}>
+                                    <Typography sx={{ fontSize:10, color: t.text.muted, mb:1, letterSpacing:1 }}>
                                         PREREQUISITES
                                     </Typography>
                                     <Box sx={{ display:"flex", flexWrap:"wrap", gap:0.7 }}>
@@ -234,14 +235,14 @@ const Courses = () => {
                             {isEnrolled && enrolledData && (
                                 <Box sx={{ mb:2 }}>
                                     <Box sx={{ display:"flex", justifyContent:"space-between", mb:0.6 }}>
-                                        <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.4)" }}>Progress</Typography>
+                                        <Typography sx={{ fontSize:10, color: t.text.secondary }}>Progress</Typography>
                                         <Typography sx={{ fontSize:10, fontWeight:600, color:"#4f8ef7" }}>
                                             {enrolledData.progress || 0}%
                                         </Typography>
                                     </Box>
                                     <LinearProgress variant="determinate" value={enrolledData.progress || 0}
                                         sx={{ height:4, borderRadius:10,
-                                            backgroundColor:"rgba(255,255,255,0.06)",
+                                            backgroundColor: `${t.glass.inset}`,
                                             "& .MuiLinearProgress-bar": { background:"linear-gradient(90deg,#4f8ef7,#9b6dff)", borderRadius:10 } }} />
                                 </Box>
                             )}
@@ -288,23 +289,23 @@ const Courses = () => {
                 onClose={() => { setTestModal({open:false, course:null}); setResult(null); }}
                 maxWidth="sm" fullWidth
                 PaperProps={{ sx: {
-                    backgroundColor:"#0c0c12",
+                    backgroundColor: t.glass.panel,
                     border:"1px solid rgba(155,109,255,0.2)",
                     borderRadius:"20px",
                     maxHeight:"90vh",
                 }}}>
-                <DialogTitle sx={{ color:"#fff", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                <DialogTitle sx={{ color: t.text.primary, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <Box sx={{ display:"flex", alignItems:"center", gap:1.5 }}>
                         <AutoAwesomeRoundedIcon sx={{ color:"#9b6dff" }} />
                         <Box>
                             <Typography sx={{ fontSize:17, fontWeight:700 }}>AI Skill Test</Typography>
-                            <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.35)" }}>
+                            <Typography sx={{ fontSize:11, color: t.text.muted }}>
                                 {testModal.course?.title}
                             </Typography>
                         </Box>
                     </Box>
                     <IconButton onClick={() => { setTestModal({open:false, course:null}); setResult(null); }}
-                        sx={{ color:"rgba(255,255,255,0.4)", "&:hover": { color:"#fff" } }}>
+                        sx={{ color: t.text.secondary, "&:hover": { color: t.text.primary } }}>
                         <CloseRoundedIcon />
                     </IconButton>
                 </DialogTitle>
@@ -313,7 +314,7 @@ const Courses = () => {
                     {generatingTest && (
                         <Box sx={{ textAlign:"center", py:5 }}>
                             <CircularProgress sx={{ color:"#9b6dff" }} />
-                            <Typography sx={{ color:"rgba(255,255,255,0.4)", mt:2, fontSize:13 }}>
+                            <Typography sx={{ color: t.text.secondary, mt:2, fontSize:13 }}>
                                 Generating AI test...
                             </Typography>
                         </Box>
@@ -321,8 +322,8 @@ const Courses = () => {
 
                     {!generatingTest && !result && assessment && (
                         <Box>
-                            <Typography sx={{ fontSize:12, color:"rgba(255,255,255,0.4)", mb:3, pb:2,
-                                borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
+                            <Typography sx={{ fontSize:12, color: t.text.secondary, mb:3, pb:2,
+                                borderBottom: `1px solid ${t.border.subtle}` }}>
                                 Answer all {assessment.totalQuestions} questions to analyse your skill level.
                             </Typography>
 
@@ -337,11 +338,11 @@ const Courses = () => {
                                             {q.options.map((opt, oi) => (
                                                 <FormControlLabel key={oi} value={oi} control={
                                                     <Radio size="small" sx={{
-                                                        color:"rgba(255,255,255,0.3)",
+                                                        color: t.text.secondary,
                                                         "&.Mui-checked": { color:"#9b6dff" },
                                                     }} />
                                                 }
-                                                label={<Typography sx={{ fontSize:12, color:"rgba(255,255,255,0.65)" }}>
+                                                label={<Typography sx={{ fontSize:12, color: t.text.secondary }}>
                                                     {opt}
                                                 </Typography>}
                                                 sx={{ mb:0.5, mx:0, alignItems:"center",
@@ -359,9 +360,9 @@ const Courses = () => {
                                 onClick={handleSubmitTest}
                                 sx={{ mt:1, height:48, borderRadius:"13px",
                                     background:"linear-gradient(135deg,#9b6dff,#4f8ef7)",
-                                    color:"#fff", fontWeight:700, textTransform:"none", fontSize:14,
+                                    color: "#fff", fontWeight:700, textTransform:"none", fontSize:14,
                                     "&:disabled": { opacity:0.5 } }}>
-                                {submitting ? <CircularProgress size={20} sx={{ color:"#fff" }} /> : "Submit Test"}
+                                {submitting ? <CircularProgress size={20} sx={{ color: "#fff" }} /> : "Submit Test"}
                             </Button>
                         </Box>
                     )}
@@ -370,13 +371,13 @@ const Courses = () => {
                         <Box>
                             {/* Score summary */}
                             <Box sx={{ textAlign:"center", py:3,
-                                borderBottom:"1px solid rgba(255,255,255,0.07)", mb:3 }}>
+                                borderBottom: `1px solid ${t.border.subtle}`, mb:3 }}>
                                 <Typography sx={{ fontSize:52, fontWeight:800,
                                     color: result.result.percentage >= 80 ? "#3ecf8e"
                                         : result.result.percentage >= 50 ? "#4f8ef7" : "#f76060" }}>
                                     {result.result.percentage}%
                                 </Typography>
-                                <Typography sx={{ fontSize:14, color:"rgba(255,255,255,0.55)", mt:1 }}>
+                                <Typography sx={{ fontSize:14, color: t.text.secondary, mt:1 }}>
                                     {result.result.score}/{result.result.total} correct
                                 </Typography>
                                 <Chip label={`+${result.result.xpEarned} XP Earned`}
@@ -411,7 +412,7 @@ const Courses = () => {
                                                     Correct: {r.options[r.correctAnswer]}
                                                 </Typography>
                                             )}
-                                            <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.38)" }}>
+                                            <Typography sx={{ fontSize:11, color: t.text.muted }}>
                                                 {r.explanation}
                                             </Typography>
                                         </Box>
@@ -421,8 +422,8 @@ const Courses = () => {
 
                             <Button fullWidth onClick={() => setTestModal({open:false, course:null})}
                                 sx={{ mt:1, height:46, borderRadius:"13px",
-                                    border:"1px solid rgba(255,255,255,0.12)", color:"#fff",
-                                    textTransform:"none", "&:hover": { backgroundColor:"rgba(255,255,255,0.05)" } }}>
+                                    border: `1px solid ${t.border.subtle}`, color: t.text.primary,
+                                    textTransform:"none", "&:hover": { backgroundColor: `${t.glass.inset}` } }}>
                                 Close
                             </Button>
                         </Box>

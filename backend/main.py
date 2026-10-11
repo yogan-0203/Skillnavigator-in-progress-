@@ -16,6 +16,7 @@ from contextlib import asynccontextmanager
 
 from database import connect_db, close_db, AsyncSessionLocal
 from routers import auth, courses, assessment, roadmap, gap_analysis, achievements, progress, user
+from routers import practice, mentor, leaderboard
 from models import Course
 from sqlalchemy import select
 
@@ -121,6 +122,9 @@ app.include_router(gap_analysis.router, prefix="/api")
 app.include_router(achievements.router, prefix="/api")
 app.include_router(progress.router,     prefix="/api")
 app.include_router(user.router,         prefix="/api")
+app.include_router(practice.router,     prefix="/api")
+app.include_router(mentor.router,       prefix="/api")
+app.include_router(leaderboard.router,  prefix="/api")
 
 
 @app.get("/api/health")

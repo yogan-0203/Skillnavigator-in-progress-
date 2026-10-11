@@ -34,6 +34,8 @@ export const authAPI = {
     updateProfile: (data) => API.put("/auth/update-profile", data),
     googleUrl: () => API.get("/auth/google/url"),
     googleCallback: (code) => API.get("/auth/google/callback", { params: { code } }),
+    resendVerification: () => API.post("/auth/resend-verification"),
+    verifyEmail: (token) => API.post("/auth/verify-email", { token }),
 };
 
 // ── Courses ───────────────────────────────────────────────────────────────
@@ -83,6 +85,25 @@ export const progressAPI = {
 export const userAPI = {
     dashboard: () => API.get("/user/dashboard"),
     updateSkills: (skills) => API.put("/user/skills", { skills }),
+};
+
+// ── Adaptive Practice (spaced repetition) ─────────────────────────────────
+export const practiceAPI = {
+    session: () => API.get("/practice/session"),
+    submit: (sessionId, answers, minutes = 0) =>
+        API.post("/practice/session/submit", { sessionId, answers, minutes }),
+    schedule: () => API.get("/practice/schedule"),
+};
+
+// ── AI Mentor (context-aware chat) ────────────────────────────────────────
+export const mentorAPI = {
+    chat: (message, history = []) => API.post("/mentor/chat", { message, history }),
+    history: () => API.get("/mentor/history"),
+};
+
+// ── Leaderboard ───────────────────────────────────────────────────────────
+export const leaderboardAPI = {
+    get: () => API.get("/leaderboard"),
 };
 
 export default API;

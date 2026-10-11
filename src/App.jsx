@@ -1,4 +1,4 @@
-﻿import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+﻿import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 import Layout from "./Layout";
@@ -12,15 +12,17 @@ import Progress from "./Progress";
 import Achievement from "./Achievement";
 import Settings from "./Settings";
 import CareerOnboarding from "./CareerOnboarding";
+import Login from "./Login";
+import Register from "./Register";
+import Practice from "./Practice";
+import Leaderboard from "./Leaderboard";
 
 import { useAuth } from "./AuthContext";
 import { Box, CircularProgress } from "@mui/material";
 
 // Google OAuth callback handler
 const GoogleCallback = () => {
-    const { login } = useAuth();
-    const navigate = useNavigate();
-    const [error, setError] = useState("");
+    const [error] = useState("");
 
     useEffect(() => {
         const hash = window.location.hash;
@@ -33,28 +35,27 @@ const GoogleCallback = () => {
 
     if (error) {
         return (
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#030306", color: "#fff" }}>
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg-primary)", color: "var(--text-primary)" }}>
                 <div>{error}</div>
             </Box>
         );
     }
 
     return (
-        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "#030306" }}>
-            <CircularProgress sx={{ color: "#4f8ef7" }} />
+        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", background: "var(--bg-primary)" }}>
+            <CircularProgress sx={{ color: "var(--accent-blue)" }} />
         </Box>
     );
 };
 
 // Protected route wrapper
 const Protected = ({ children }) => {
-    const { user, loading } = useAuth();
-    const location = useLocation();
+    const { loading } = useAuth();
 
     if (loading) {
         return (
-            <Box sx={{ width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#030306" }}>
-                <CircularProgress sx={{ color: "rgba(255,255,255,0.4)" }} />
+            <Box sx={{ width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
+                <CircularProgress sx={{ color: "var(--accent-blue)" }} />
             </Box>
         );
     }
@@ -77,8 +78,8 @@ const OnboardingWrapper = ({ children }) => {
 
     if (checking) {
         return (
-            <Box sx={{ width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "#030306" }}>
-                <CircularProgress sx={{ color: "rgba(255,255,255,0.4)" }} />
+            <Box sx={{ width: "100vw", height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "var(--bg-primary)" }}>
+                <CircularProgress sx={{ color: "var(--accent-blue)" }} />
             </Box>
         );
     }
@@ -98,6 +99,10 @@ function App() {
                 <Route path="/auth/google/callback" element={<GoogleCallback />} />
 
 
+                {/* Public auth pages */}
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+
                 {/* Protected app shell */}
                 <Route element={<Protected><Layout /></Protected>}>
                     <Route path="/" element={<OnboardingWrapper><Home /></OnboardingWrapper>} />
@@ -106,6 +111,8 @@ function App() {
                     <Route path="/gap-analysis" element={<GapAnalysis />} />
                     <Route path="/roadmap" element={<Roadmap />} />
                     <Route path="/courses" element={<Courses />} />
+                    <Route path="/practice" element={<Practice />} />
+                    <Route path="/leaderboard" element={<Leaderboard />} />
                     <Route path="/progress" element={<Progress />} />
                     <Route path="/achievement" element={<Achievement />} />
                     <Route path="/settings" element={<Settings />} />

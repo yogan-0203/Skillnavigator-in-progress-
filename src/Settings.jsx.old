@@ -1,0 +1,209 @@
+import { useState } from "react";
+import {
+    Box, Typography, Button, Switch, Divider,
+    TextField, CircularProgress, Alert,
+} from "@mui/material";
+import SettingsRoundedIcon from "@mui/icons-material/SettingsRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import SecurityRoundedIcon from "@mui/icons-material/SecurityRounded";
+import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
+import DarkModeRoundedIcon from "@mui/icons-material/DarkModeRounded";
+import { useAuth } from "./AuthContext";
+import { authAPI } from "./api";
+import { useTheme } from "./ThemeContext";
+
+const card = {
+    border: "1px solid rgba(255,255,255,0.08)",
+    borderRadius: "20px",
+    background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))",
+    boxShadow: "0 0 0 1px rgba(255,255,255,0.012), 0 20px 50px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
+};
+
+const Settings = () => {
+    const { user, refreshUser } = useAuth();
+    const { darkMode, toggleTheme } = useTheme();
+    const [profile, setProfile] = useState({
+        name: user?.name || "",
+        targetCareer: user?.targetCareer || "",
+        learningDomain: user?.learningDomain || "",
+    });
+    const [saving, setSaving] = useState(false);
+    const [saved, setSaved] = useState(false);
+    const [prefs, setPrefs] = useState({
+        aiRecommendations: true,
+        learningNotifications: true,
+        careerAlerts: true,
+        profileVisibility: true,
+    });
+
+    const handleSaveProfile = async () => {
+        setSaving(true);
+        try {
+            await authAPI.updateProfile(profile);
+            await refreshUser();
+            setSaved(true);
+            setTimeout(() => setSaved(false), 3000);
+        } catch {
+            alert("Could not save profile. Please try again.");
+        } finally {
+            setSaving(false);
+        }
+    };
+
+    const textPrimary = darkMode ? "#f0f0f8" : "#1a1a2e";
+    const textSecondary = darkMode ? "rgba(255,255,255,0.45)" : "rgba(0,0,0,0.55)";
+    const cardBorder = darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)";
+    const accent = "linear-gradient(135deg, #4f8ef7, #9b6dff)";
+
+    const card = {
+        border: cardBorder,
+        borderRadius: "20px",
+        background: darkMode
+            ? "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))"
+            : "linear-gradient(145deg, rgba(0,0,0,0.035), rgba(0,0,0,0.01))",
+        boxShadow: darkMode
+            ? "0 0 0 1px rgba(255,255,255,0.012), 0 20px 50px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)"
+            : "0 0 0 1px rgba(0,0,0,0.035), 0 20px 50px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.05)",
+    };
+
+    const inputSx = {
+        mb: 2,
+        color: textPrimary,
+        "& .MuiOutlinedInput-root": {
+            color: textPrimary,
+            borderRadius: "12px",
+            "& fieldset": { borderColor: cardBorder },
+            "&:hover fieldset": { borderColor: cardBorder },
+            "&.Mui-focused fieldset": { borderColor: "#4f8ef7" },
+        },
+        "& .MuiInputLabel-root": { color: textSecondary },
+        "& .MuiInputLabel-root.Mui-focused": { color: "#4f8ef7" },
+    };
+
+    return (
+        <Box sx={{ width:"100%", minHeight:"100%", color: textPrimary, pb:6, animation:"fadeIn 0.4s ease" }}>
+
+            {/* Header */}
+            <Box sx={{ mb:3 }}>
+                <Box sx={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:2 }}>
+                    <Box>
+                        <Typography sx={{ fontSize:10, letterSpacing:2.5, color: textSecondary, mb:1 }}>
+                            PREFERENCES
+                        </Typography>
+                        <Typography sx={{ fontSize:32, fontWeight:800,
+                            background: darkMode
+                                ? "linear-gradient(135deg, #fff, rgba(79,142,247,0.7))"
+                                : "linear-gradient(135deg, #1a1a2e, #4f46e5)",
+                            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
+                            Settings
+                        </Typography>
+                    </Box>
+                    <Box sx={{ display:"flex", alignItems:"center", gap:1, px:1.25, py:0.75, borderRadius:"12px", border:`1px solid ${cardBorder}` }}>
+                        <DarkModeRoundedIcon sx={{ fontSize:18, color: textSecondary }} />
+                        <Typography sx={{ fontSize:12, fontWeight:600, color: textPrimary }}>{darkMode ? "Dark" : "Light"}</Typography>
+                        <Switch checked={darkMode} onChange={toggleTheme} size="small" sx={themeToggleSx} />
+                        <Typography sx={{ fontSize:12, fontWeight:600, color: textSecondary }}>{darkMode ? "Light" : "Dark"}</Typography>
+                    </Box>
+                </Box>
+                <Typography sx={{ fontSize:13, color: textSecondary, mt:1 }}>
+                    Manage your profile and preferences.
+                </Typography>
+            </Box>
+
+            {/* Profile section */}
+            <Box sx={{ ...card, p:3, mb:2 }}>
+                <Box sx={{ display:"flex", alignItems:"center", gap:1.5, mb:3 }}>
+                    <PersonRoundedIcon sx={{ color:"#4f8ef7" }} />
+                    <Typography sx={{ fontSize:17, fontWeight:600, color: textPrimary }}>Profile</Typography>
+                </Box>
+
+                {saved && (
+                    <Alert severity="success" sx={{ mb:2, borderRadius:"12px",
+                        backgroundColor:"rgba(62,207,142,0.12)", border:"1px solid rgba(62,207,142,0.25)",
+                        color:"#3ecf8e", "& .MuiAlert-icon": { color:"#3ecf8e" } }}>
+                        Profile saved successfully!
+                    </Alert>
+                )}
+
+                <Box sx={{ display:"grid", gridTemplateColumns:"repeat(2, 1fr)", gap:2 }}>
+                    <TextField label="Full Name" value={profile.name}
+                        onChange={(e) => setProfile(p => ({ ...p, name:e.target.value }))}
+                        sx={inputSx} />
+                    <TextField label="Email" value={user?.email || ""} disabled
+                        sx={{ ...inputSx, "& .MuiOutlinedInput-root": { color: textSecondary, borderRadius:"12px", "& fieldset": { borderColor: cardBorder } } }} />
+                    <TextField label="Target Career" value={profile.targetCareer}
+                        onChange={(e) => setProfile(p => ({ ...p, targetCareer:e.target.value }))}
+                        sx={inputSx} />
+                    <TextField label="Learning Domain" value={profile.learningDomain}
+                        onChange={(e) => setProfile(p => ({ ...p, learningDomain:e.target.value }))}
+                        sx={inputSx} />
+                </Box>
+
+                <Button onClick={handleSaveProfile} disabled={saving}
+                    sx={{ height:44, px:4, borderRadius:"12px", background: accent, color:"#fff", fontWeight:600, textTransform:"none", "&:disabled": { opacity:0.5 } }}>
+                    {saving ? <CircularProgress size={18} sx={{ color:"#fff" }} /> : "Save Profile"}
+                </Button>
+            </Box>
+
+            {/* Notification preferences */}
+            <Box sx={{ ...card, p:3, mb:2 }}>
+                <Box sx={{ display:"flex", alignItems:"center", gap:1.5, mb:3 }}>
+                    <NotificationsRoundedIcon sx={{ color:"#9b6dff" }} />
+                    <Typography sx={{ fontSize:17, fontWeight:600 }}>Notifications & Privacy</Typography>
+                </Box>
+
+                {[
+                    { key:"aiRecommendations", label:"AI Recommendations", desc:"Get personalised AI learning suggestions" },
+                    { key:"learningNotifications", label:"Learning Notifications", desc:"Reminders to keep your streak alive" },
+                    { key:"careerAlerts", label:"Career Alerts", desc:"Notifications about career path updates" },
+                    { key:"profileVisibility", label:"Public Profile", desc:"Allow others to see your learning profile" },
+                ].map((pref, idx, arr) => (
+                    <Box key={pref.key}>
+                        <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"center", py:2 }}>
+                            <Box>
+                                <Typography sx={{ fontSize:14, fontWeight:500 }}>{pref.label}</Typography>
+                                <Typography sx={{ fontSize:11, color: textSecondary, mt:0.3 }}>{pref.desc}</Typography>
+                            </Box>
+                            <Switch
+                                checked={prefs[pref.key]}
+                                onChange={(e) => setPrefs(p => ({ ...p, [pref.key]: e.target.checked }))}
+                                sx={{
+                                    "& .MuiSwitch-switchBase.Mui-checked": { color:"#4f8ef7" },
+                                    "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
+                                        backgroundColor:"rgba(79,142,247,0.4)",
+                                    },
+                                    "& .MuiSwitch-track": { backgroundColor: cardBorder },
+                                }}
+                            />
+                        </Box>
+                        {idx < arr.length - 1 && <Divider sx={{ borderColor: cardBorder }} />}
+                    </Box>
+                ))}
+            </Box>
+
+            {/* Account info */}
+            <Box sx={{ ...card, p:3 }}>
+                <Box sx={{ display:"flex", alignItems:"center", gap:1.5, mb:3 }}>
+                    <SecurityRoundedIcon sx={{ color:"#3ecf8e" }} />
+                    <Typography sx={{ fontSize:17, fontWeight:600 }}>Account</Typography>
+                </Box>
+                {[
+                    { label:"Account Level", value:`Level ${user?.level || 1}` },
+                    { label:"Total XP", value:`${user?.xp || 0} XP` },
+                    { label:"Member Since", value: user?.createdAt ? new Date(user.createdAt).toLocaleDateString("en-IN", { year:"numeric", month:"long" }) : "—" },
+                    { label:"Longest Streak", value:`${user?.longestStreak || 0} days` },
+                ].map((item, idx, arr) => (
+                    <Box key={item.label}>
+                        <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"center", py:2 }}>
+                            <Typography sx={{ fontSize:14, color: textSecondary }}>{item.label}</Typography>
+                            <Typography sx={{ fontSize:14, fontWeight:600, color: textPrimary }}>{item.value}</Typography>
+                        </Box>
+                        {idx < arr.length - 1 && <Divider sx={{ borderColor: cardBorder }} />}
+                    </Box>
+                ))}
+            </Box>
+        </Box>
+    );
+};
+
+export default Settings;

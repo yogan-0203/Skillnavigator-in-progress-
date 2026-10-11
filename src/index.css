@@ -8,19 +8,19 @@
 }
 
 :root {
-  --bg-primary:       #030306;
-  --bg-secondary:     #08080c;
-  --bg-tertiary:      #0c0c14;
-  --bg-card:          rgba(255, 255, 255, 0.025);
-  --bg-card-hover:    rgba(255, 255, 255, 0.05);
-  --bg-elevated:      rgba(20, 20, 30, 0.8);
-  --border-subtle:    rgba(255, 255, 255, 0.06);
-  --border-medium:    rgba(255, 255, 255, 0.12);
-  --border-strong:    rgba(255, 255, 255, 0.20);
-  --text-primary:     #f0f0f8;
-  --text-secondary:   rgba(255, 255, 255, 0.55);
-  --text-muted:       rgba(255, 255, 255, 0.30);
-  --text-faint:       rgba(255, 255, 255, 0.12);
+  --bg-primary:       #eef1f8;
+  --bg-secondary:     #e7ebf5;
+  --bg-tertiary:      #dde3f0;
+  --bg-card:          rgba(255, 255, 255, 0.6);
+  --bg-card-hover:    rgba(255, 255, 255, 0.8);
+  --bg-elevated:      rgba(255, 255, 255, 0.85);
+  --border-subtle:    rgba(22, 22, 42, 0.1);
+  --border-medium:    rgba(22, 22, 42, 0.16);
+  --border-strong:    rgba(22, 22, 42, 0.26);
+  --text-primary:     #16162a;
+  --text-secondary:   rgba(22, 22, 42, 0.68);
+  --text-muted:       rgba(22, 22, 42, 0.45);
+  --text-faint:       rgba(22, 22, 42, 0.25);
   --accent-blue:      #4f8ef7;
   --accent-purple:    #9b6dff;
   --accent-green:     #3ecf8e;
@@ -37,6 +37,24 @@
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+
+/* Dark theme overrides for raw CSS variables (set when data-theme="dark") */
+:root[data-theme="dark"] {
+  --bg-primary:       #08080d;
+  --bg-secondary:     #0c0c14;
+  --bg-tertiary:      #12121c;
+  --bg-card:          rgba(20, 20, 32, 0.55);
+  --bg-card-hover:    rgba(30, 30, 46, 0.65);
+  --bg-elevated:      rgba(16, 16, 26, 0.85);
+  --border-subtle:    rgba(255, 255, 255, 0.1);
+  --border-medium:    rgba(255, 255, 255, 0.16);
+  --border-strong:    rgba(255, 255, 255, 0.26);
+  --text-primary:     #f0f0f8;
+  --text-secondary:   rgba(240, 240, 248, 0.62);
+  --text-muted:       rgba(240, 240, 248, 0.4);
+  --text-faint:       rgba(240, 240, 248, 0.18);
   color-scheme: dark;
 }
 
@@ -50,20 +68,20 @@ html, body, #root {
 
 ::-webkit-scrollbar { width: 4px; height: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
 /* ── Animations ───────────────────────────────────────────────────────── */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(14px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 @keyframes fadeInScale {
-  from { opacity: 0; transform: scale(0.95); }
+  from { opacity: 0; transform: scale(0.92); }
   to   { opacity: 1; transform: scale(1); }
 }
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(20px); }
+  from { opacity: 0; transform: translateX(28px); }
   to   { opacity: 1; transform: translateX(0); }
 }
 @keyframes pulseGlow {
@@ -91,23 +109,240 @@ html, body, #root {
 .pulse-glow    { animation: pulseGlow 2s ease infinite; }
 
 .gradient-text {
-  background: linear-gradient(135deg, #fff 0%, rgba(255,255,255,0.5) 100%);
+  background: linear-gradient(135deg, #4f8ef7 0%, #9b6dff 60%, #3ecf8e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
 .glass-card {
-  background: linear-gradient(145deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+  background: var(--bg-card);
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
-  box-shadow: 0 0 0 1px rgba(255,255,255,0.01), 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow: 0 20px 60px rgba(22, 22, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.4);
   backdrop-filter: blur(10px);
+}
+:root[data-theme="dark"] .glass-card {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .skeleton {
-  background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+  background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--border-medium) 50%, var(--bg-tertiary) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: 8px;
 }
+
+/* ── Base: animated clay + glass backdrop ───────────────────────────────── */
+.app-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  transition: background 0.4s ease;
+}
+
+:root[data-theme="dark"] .app-backdrop {
+  background:
+    radial-gradient(1100px 500px at 12% -8%, rgba(79, 142, 247, 0.14), transparent 60%),
+    radial-gradient(900px 480px at 88% 6%, rgba(155, 109, 255, 0.13), transparent 60%),
+    radial-gradient(1000px 700px at 50% 115%, rgba(62, 207, 142, 0.07), transparent 60%),
+    #08080d;
+}
+
+:root[data-theme="light"] .app-backdrop {
+  background:
+    radial-gradient(1100px 500px at 12% -8%, rgba(79, 142, 247, 0.16), transparent 60%),
+    radial-gradient(900px 480px at 88% 6%, rgba(155, 109, 255, 0.15), transparent 60%),
+    radial-gradient(1000px 700px at 50% 115%, rgba(62, 207, 142, 0.12), transparent 60%),
+    #eef0f7;
+}
+
+.app-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(127, 140, 170, 0.16) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 20%, black 30%, transparent 75%);
+}
+
+@keyframes clayPop {
+  0%   { opacity: 0; transform: translateY(26px) scale(0.94); }
+  60%  { opacity: 1; transform: translateY(-4px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes clayFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+@keyframes clayPress {
+  0%   { transform: scale(1); }
+  50%  { transform: scale(0.97); }
+  100% { transform: scale(1); }
+}
+
+.clay-enter { animation: clayPop 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-1 { animation: clayPop 0.45s 0.05s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-2 { animation: clayPop 0.45s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-3 { animation: clayPop 0.45s 0.15s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-4 { animation: clayPop 0.45s 0.2s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-5 { animation: clayPop 0.45s 0.25s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-6 { animation: clayPop 0.45s 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-7 { animation: clayPop 0.45s 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-enter-8 { animation: clayPop 0.45s 0.4s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.clay-float { animation: clayFloat 4s ease-in-out infinite; }
+
+/* ── Staggered children entrance ───────────────────────────────────────────
+   Apply .stagger to any container; each direct child pops in sequence. */
+.stagger > * { animation: clayPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.13s; }
+.stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.stagger > *:nth-child(5) { animation-delay: 0.23s; }
+.stagger > *:nth-child(6) { animation-delay: 0.28s; }
+.stagger > *:nth-child(7) { animation-delay: 0.33s; }
+.stagger > *:nth-child(8) { animation-delay: 0.38s; }
+.stagger > *:nth-child(9) { animation-delay: 0.43s; }
+.stagger > *:nth-child(10) { animation-delay: 0.48s; }
+.stagger > *:nth-child(n+11) { animation-delay: 0.53s; }
+
+/* ── Interactive card lift on hover (whole tree of MUI Paper/Box) ────────── */
+.card-hover {
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+  will-change: transform;
+}
+.card-hover:hover {
+  transform: translateY(-6px) scale(1.015);
+  box-shadow: 0 22px 48px rgba(79, 142, 247, 0.22), 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* ── Icon badge pop-in on mount ─────────────────────────────────────────── */
+@keyframes iconPop {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+  60%  { opacity: 1; transform: scale(1.12) rotate(4deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0); }
+}
+.icon-pop { animation: iconPop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both; }
+
+/* ── Shimmer sweep for progress/loading bars ────────────────────────────── */
+@keyframes shimmerSweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent);
+  animation: shimmerSweep 2.2s ease-in-out infinite;
+}
+
+/* ── Gentle float for hero/decorative elements ──────────────────────────── */
+@keyframes gentleFloat {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+.gentle-float { animation: gentleFloat 5s ease-in-out infinite; }
+
+/* Respect users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Global interactive polish (buttons, clickable rows, list items) ─────── */
+button, .MuiButton-root, a, .MuiListItem-root, .MuiIconButton-root {
+  transition: transform 0.16s ease, box-shadow 0.2s ease, background-color 0.2s ease !important;
+}
+.MuiButton-root:active, button:active, .MuiIconButton-root:active {
+  transform: scale(0.96) !important;
+}
+.MuiButton-contained:hover, .MuiButton-containedSuccess:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(79, 142, 247, 0.35);
+}
+.MuiButton-contained:active {
+  transform: translateY(0) scale(0.97) !important;
+}
+
+/* Nav / sidebar active pill gets a smooth slide-in accent */
+.MuiListItem-root {
+  position: relative;
+}
+.MuiListItem-root:hover {
+  transform: translateX(3px);
+}
+
+/* Page-level entrance for routed content */
+@keyframes pageEnter {
+  0%   { opacity: 0; transform: translateY(18px) scale(0.99); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+.page-enter {
+  animation: pageEnter 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Light/Dark frosted surfaces for overlays ─────────────────────────────
+   Dialogs / drawers / popovers become true frosted glass in both themes. */
+:root[data-theme="light"] .MuiDialog-paper,
+:root[data-theme="light"] .MuiDrawer-paper,
+:root[data-theme="light"] .MuiPopover-paper,
+:root[data-theme="light"] .MuiMenu-paper {
+  background: rgba(255, 255, 255, 0.82) !important;
+  background-image: none !important;
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  border: 1px solid rgba(22, 22, 42, 0.12);
+  color: #16162a;
+}
+:root[data-theme="dark"] .MuiDialog-paper,
+:root[data-theme="dark"] .MuiDrawer-paper,
+:root[data-theme="dark"] .MuiPopover-paper,
+:root[data-theme="dark"] .MuiMenu-paper {
+  background: rgba(18, 18, 28, 0.85) !important;
+  background-image: none !important;
+  backdrop-filter: blur(20px) saturate(1.25);
+  -webkit-backdrop-filter: blur(20px) saturate(1.25);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* ── Light-theme safety net (readable MUI everywhere) ───────────────────── */
+:root[data-theme="light"] .MuiOutlinedInput-root {
+  color: var(--text-primary);
+  background: rgba(0, 0, 0, 0.02);
+}
+:root[data-theme="light"] .MuiOutlinedInput-root fieldset {
+  border-color: rgba(0, 0, 0, 0.16);
+}
+:root[data-theme="light"] .MuiOutlinedInput-root:hover fieldset {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+:root[data-theme="light"] .MuiOutlinedInput-root.Mui-focused fieldset {
+  border-color: var(--accent);
+}
+:root[data-theme="light"] .MuiOutlinedInput-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+  opacity: 1;
+}
+:root[data-theme="light"] .MuiInputLabel-root {
+  color: rgba(0, 0, 0, 0.6);
+}
+:root[data-theme="light"] .MuiInputLabel-root.Mui-focused {
+  color: var(--accent);
+}
+:root[data-theme="light"] .MuiSwitch-track {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+:root[data-theme="light"] .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track {
+  background-color: var(--accent);
+  opacity: 0.6;
+}
+:root[data-theme="light"] .MuiDivider-root {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+

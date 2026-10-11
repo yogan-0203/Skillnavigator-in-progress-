@@ -17,19 +17,20 @@ import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 
 import { useNavigate } from "react-router-dom";
 import { gapAPI } from "./api";
+import { useTheme } from "./ThemeContext";
+import { getTokens, ACCENTS } from "./theme/tokens";
+import { ClayCard, GlassPanel, ClayButton, PageHeader, StatTile, SegmentTabs, EmptyState, LoadingState, ChartTooltip } from "./theme/Clay";
 
-const card = {
-    border: "1px solid rgba(255,255,255,0.08)",
-    borderRadius: "20px",
-    background: "linear-gradient(145deg, rgba(255,255,255,0.045), rgba(255,255,255,0.012))",
-    boxShadow: "0 0 0 1px rgba(255,255,255,0.012), 0 20px 50px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.05)",
-};
 
 const CustomTooltip = ({ active, payload, label }) => {
+    const { darkMode } = useTheme();
+    const t = getTokens(darkMode);
+    const tx = t.text;
+    const card = { border: `1px solid ${t.border.subtle}`, borderRadius: "20px", background: t.glass.face };
     if (active && payload && payload.length) {
         return (
             <Box sx={{
-                background:"rgba(12,12,18,0.96)", border:"1px solid rgba(255,255,255,0.1)",
+                background: `${t.glass.panel}`, border: `1px solid ${t.border.subtle}`,
                 borderRadius:"12px", p:2, minWidth:160,
             }}>
                 <Typography sx={{ fontSize:12, fontWeight:700, mb:1 }}>{label}</Typography>
@@ -38,7 +39,7 @@ const CustomTooltip = ({ active, payload, label }) => {
                         <Typography sx={{ fontSize:11, color: entry.name === "Current" ? "#4f8ef7" : "#9b6dff" }}>
                             {entry.name}
                         </Typography>
-                        <Typography sx={{ fontSize:11, fontWeight:600, color:"#fff" }}>
+                        <Typography sx={{ fontSize:11, fontWeight:600, color: t.text.primary }}>
                             {entry.value}%
                         </Typography>
                     </Box>
@@ -86,7 +87,7 @@ const GapAnalysis = () => {
 
     if (loading) return (
         <Box sx={{ display:"flex", alignItems:"center", justifyContent:"center", height:"80vh" }}>
-            <CircularProgress sx={{ color:"rgba(255,255,255,0.3)" }} />
+            <CircularProgress sx={{ color: t.text.secondary }} />
         </Box>
     );
 
@@ -100,20 +101,20 @@ const GapAnalysis = () => {
     };
 
     return (
-        <Box sx={{ width:"100%", minHeight:"100%", color:"#fff", pb:5, animation:"fadeIn 0.4s ease" }}>
+        <Box className="stagger" sx={{ width: "100%", minHeight: "100%", color: t.text.primary, pb:5, animation:"fadeIn 0.4s ease" }}>
 
             {/* Header */}
             <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", mb:4 }}>
                 <Box>
-                    <Typography sx={{ fontSize:10, letterSpacing:2.5, color:"rgba(255,255,255,0.28)", mb:1 }}>
+                    <Typography sx={{ fontSize:10, letterSpacing:2.5, color: t.text.muted, mb:1 }}>
                         AI SKILL INTELLIGENCE
                     </Typography>
                     <Typography sx={{ fontSize:32, fontWeight:800,
-                        background:"linear-gradient(135deg, #fff, rgba(155,109,255,0.8))",
+                        background: t.dark ? "linear-gradient(135deg, #fff, rgba(155,109,255,0.8))" : `linear-gradient(135deg, ${t.text.primary}, #9b6dff)`,
                         WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>
                         Gap Analysis
                     </Typography>
-                    <Typography sx={{ fontSize:13, color:"rgba(255,255,255,0.35)", mt:1 }}>
+                    <Typography sx={{ fontSize:13, color: t.text.muted, mt:1 }}>
                         Understand exactly which skills you need to improve for your target career.
                     </Typography>
                 </Box>
@@ -129,7 +130,7 @@ const GapAnalysis = () => {
             {/* Stat cards */}
             <Box sx={{ display:"grid", gridTemplateColumns:"repeat(3, 1fr)", gap:2, mb:2 }}>
                 <Box sx={{ ...card, p:3 }}>
-                    <Typography sx={{ fontSize:10, letterSpacing:1, color:"rgba(255,255,255,0.3)" }}>
+                    <Typography sx={{ fontSize:10, letterSpacing:1, color: t.text.secondary }}>
                         OVERALL READINESS
                     </Typography>
                     <Typography sx={{ fontSize:42, fontWeight:800, mt:1,
@@ -138,7 +139,7 @@ const GapAnalysis = () => {
                     </Typography>
                     <LinearProgress variant="determinate" value={overallReadiness}
                         sx={{ mt:1.5, height:5, borderRadius:10,
-                            backgroundColor:"rgba(255,255,255,0.06)",
+                            backgroundColor: `${t.glass.inset}`,
                             "& .MuiLinearProgress-bar": {
                                 background: overallReadiness >= 70
                                     ? "linear-gradient(90deg, #3ecf8e, #38c9d8)"
@@ -149,26 +150,26 @@ const GapAnalysis = () => {
                             }}} />
                 </Box>
                 <Box sx={{ ...card, p:3 }}>
-                    <Typography sx={{ fontSize:10, letterSpacing:1, color:"rgba(255,255,255,0.3)" }}>
+                    <Typography sx={{ fontSize:10, letterSpacing:1, color: t.text.secondary }}>
                         TOTAL SKILL GAPS
                     </Typography>
                     <Typography sx={{ fontSize:42, fontWeight:800, mt:1, color:"#f7934c" }}>
                         {totalGaps}
                     </Typography>
-                    <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.3)", mt:1 }}>
+                    <Typography sx={{ fontSize:11, color: t.text.secondary, mt:1 }}>
                         Skills requiring improvement
                     </Typography>
                 </Box>
                 <Box sx={{ ...card, p:3 }}>
-                    <Typography sx={{ fontSize:10, letterSpacing:1, color:"rgba(255,255,255,0.3)" }}>
+                    <Typography sx={{ fontSize:10, letterSpacing:1, color: t.text.secondary }}>
                         TARGET CAREER
                     </Typography>
-                    <Typography sx={{ fontSize:18, fontWeight:700, mt:2, color:"#fff" }}>
+                    <Typography sx={{ fontSize:18, fontWeight:700, mt:2, color: t.text.primary }}>
                         {targetCareer}
                     </Typography>
                     <Box sx={{ display:"flex", alignItems:"center", gap:0.8, mt:1 }}>
                         <TrendingUpRoundedIcon sx={{ fontSize:14, color:"#4f8ef7" }} />
-                        <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.3)" }}>
+                        <Typography sx={{ fontSize:11, color: t.text.secondary }}>
                             Current career target
                         </Typography>
                     </Box>
@@ -182,7 +183,7 @@ const GapAnalysis = () => {
                         <Typography sx={{ fontSize:18, fontWeight:600 }}>
                             Current vs Required Skills
                         </Typography>
-                        <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.28)", mt:0.5 }}>
+                        <Typography sx={{ fontSize:11, color: t.text.muted, mt:0.5 }}>
                             Your proficiency vs required level for {targetCareer}
                         </Typography>
                     </Box>
@@ -194,7 +195,7 @@ const GapAnalysis = () => {
                                     textTransform:"none", fontSize:11, borderRadius:"10px",
                                     minWidth:70, px:2,
                                     backgroundColor: chartType === type ? "rgba(79,142,247,0.15)" : "transparent",
-                                    color: chartType === type ? "#4f8ef7" : "rgba(255,255,255,0.4)",
+                                    color: chartType === type ? "#4f8ef7" : t.text.secondary,
                                     border: chartType === type ? "1px solid rgba(79,142,247,0.3)" : "1px solid transparent",
                                     "&:hover": { backgroundColor:"rgba(79,142,247,0.08)" },
                                 }}>
@@ -208,15 +209,15 @@ const GapAnalysis = () => {
                     <ResponsiveContainer>
                         {chartType === "bar" ? (
                             <BarChart data={skillData} margin={{ top:10, right:20, left:-20, bottom:5 }}>
-                                <CartesianGrid stroke="rgba(255,255,255,0.05)" vertical={false} />
-                                <XAxis dataKey="skill" tick={{ fill:"rgba(255,255,255,0.4)", fontSize:10 }}
+                                <CartesianGrid stroke={t.chart.grid} vertical={false} />
+                                <XAxis dataKey="skill" tick={{ fill: t.chart.tick, fontSize:10 }}
                                     axisLine={false} tickLine={false} />
                                 <YAxis domain={[0,100]}
-                                    tick={{ fill:"rgba(255,255,255,0.3)", fontSize:10 }}
+                                    tick={{ fill: t.chart.tickFaint, fontSize:10 }}
                                     axisLine={false} tickLine={false} />
                                 <Tooltip content={<CustomTooltip />} />
                                 <Legend
-                                    wrapperStyle={{ fontSize:11, color:"rgba(255,255,255,0.5)", paddingTop:12 }} />
+                                    wrapperStyle={{ fontSize:11, color: t.text.secondary, paddingTop:12 }} />
                                 <Bar dataKey="current" name="Current" fill="#4f8ef7"
                                     radius={[5,5,0,0]} isAnimationActive={false} />
                                 <Bar dataKey="required" name="Required" fill="#9b6dff"
@@ -224,15 +225,15 @@ const GapAnalysis = () => {
                             </BarChart>
                         ) : (
                             <RadarChart data={skillData}>
-                                <PolarGrid stroke="rgba(255,255,255,0.08)" />
+                                <PolarGrid stroke={t.chart.grid} />
                                 <PolarAngleAxis dataKey="skill"
-                                    tick={{ fill:"rgba(255,255,255,0.45)", fontSize:10 }} />
+                                    tick={{ fill: t.chart.tick, fontSize:10 }} />
                                 <PolarRadiusAxis domain={[0,100]} tick={false} axisLine={false} />
                                 <Radar name="Current" dataKey="current"
                                     stroke="#4f8ef7" fill="#4f8ef7" fillOpacity={0.15} />
                                 <Radar name="Required" dataKey="required"
                                     stroke="#9b6dff" fill="#9b6dff" fillOpacity={0.1} />
-                                <Legend wrapperStyle={{ fontSize:11, color:"rgba(255,255,255,0.5)" }} />
+                                <Legend wrapperStyle={{ fontSize:11, color: t.text.secondary }} />
                                 <Tooltip content={<CustomTooltip />} />
                             </RadarChart>
                         )}
@@ -247,7 +248,7 @@ const GapAnalysis = () => {
                         <WarningAmberRoundedIcon sx={{ color:"#f7934c" }} />
                         <Box>
                             <Typography sx={{ fontSize:18, fontWeight:600 }}>Priority Skill Gaps</Typography>
-                            <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.28)", mt:0.5 }}>
+                            <Typography sx={{ fontSize:11, color: t.text.muted, mt:0.5 }}>
                                 Skills that need the most attention
                             </Typography>
                         </Box>
@@ -270,22 +271,22 @@ const GapAnalysis = () => {
                                                 border:`1px solid ${lvl.color}30` }} />
                                     </Box>
                                     <Box sx={{ display:"flex", justifyContent:"space-between", mt:2, mb:0.8 }}>
-                                        <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.35)" }}>
+                                        <Typography sx={{ fontSize:10, color: t.text.muted }}>
                                             Current {item.current}%
                                         </Typography>
-                                        <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.35)" }}>
+                                        <Typography sx={{ fontSize:10, color: t.text.muted }}>
                                             Required {item.required}%
                                         </Typography>
                                     </Box>
                                     <Box sx={{ position:"relative", height:6, borderRadius:10,
-                                        backgroundColor:"rgba(255,255,255,0.06)" }}>
+                                        backgroundColor: `${t.glass.inset}` }}>
                                         <Box sx={{ position:"absolute", height:"100%", borderRadius:10,
                                             width:`${item.required}%`, backgroundColor:`${lvl.color}30` }} />
                                         <Box sx={{ position:"absolute", height:"100%", borderRadius:10,
                                             width:`${item.current}%`,
                                             background:`linear-gradient(90deg, ${lvl.color}, ${lvl.color}88)` }} />
                                     </Box>
-                                    <Typography sx={{ fontSize:10, color:"rgba(255,255,255,0.28)", mt:1 }}>
+                                    <Typography sx={{ fontSize:10, color: t.text.muted, mt:1 }}>
                                         Gap: {item.gap}% to close
                                     </Typography>
                                 </Box>
@@ -306,7 +307,7 @@ const GapAnalysis = () => {
                     </Box>
                     <Box>
                         <Typography sx={{ fontSize:16, fontWeight:600 }}>AI Recommendation</Typography>
-                        <Typography sx={{ fontSize:11, color:"rgba(255,255,255,0.32)", mt:0.5, maxWidth:480 }}>
+                        <Typography sx={{ fontSize:11, color: t.text.muted, mt:0.5, maxWidth:480 }}>
                             {aiRecommendation}
                         </Typography>
                     </Box>

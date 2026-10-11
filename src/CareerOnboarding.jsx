@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
     Box, Typography, Chip, Button, Fade, LinearProgress,
     Stepper, Step, StepLabel, StepContent, IconButton, Radio,
@@ -87,7 +87,7 @@ const CareerOnboarding = ({ onComplete }) => {
 
     return (
         <Box sx={{ minHeight: "100vh", width: "100vw", background: bg, display: "flex", alignItems: "center", justifyContent: "center", p: 3 }}>
-            <Box sx={{ width: 640, maxWidth: "100%" }}>
+            <Box sx={{ width: 640, maxWidth: "100%", animation: "fadeInScale 0.5s ease both" }}>
                 {/* Progress */}
                 <Box sx={{ mb: 4 }}>
                     <LinearProgress variant="determinate" value={(activeStep / 3) * 100} sx={{ height: 4, borderRadius: 10, backgroundColor: darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)", "& .MuiLinearProgress-bar": { background: "linear-gradient(90deg, #4f8ef7, #9b6dff)", borderRadius: 10 } }} />
@@ -103,7 +103,7 @@ const CareerOnboarding = ({ onComplete }) => {
                             </Box>
                             <Typography sx={{ fontSize: 28, fontWeight: 800, color: textPrimary, mb: 1 }}>Let's personalize your journey</Typography>
                             <Typography sx={{ fontSize: 14, color: textSecondary, mb: 4 }}>Tell us about your career goals so we can create the perfect learning path for you.</Typography>
-                            <Button onClick={handleNext} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ height: 48, px: 4, borderRadius: "12px", background: "linear-gradient(135deg, #4f8ef7, #9b6dff)", textTransform: "none", fontSize: 14 }}>Get Started</Button>
+                            <Button onClick={handleNext} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ height: 48, px: 4, borderRadius: "12px", background: "linear-gradient(135deg, #4f8ef7, #9b6dff)", color: "#fff", textTransform: "none", fontSize: 14 }}>Get Started</Button>
                         </Box>
                     </Fade>
                 )}
@@ -115,8 +115,8 @@ const CareerOnboarding = ({ onComplete }) => {
                             <Typography sx={{ fontSize: 22, fontWeight: 700, color: textPrimary, mb: 1 }}>What career are you interested in?</Typography>
                             <Typography sx={{ fontSize: 13, color: textSecondary, mb: 3 }}>Choose the role that matches your goals</Typography>
                             <Box sx={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 1.5, mb: 3 }}>
-                                {CAREER_PATHS.map((career) => (
-                                    <Box key={career.id} onClick={() => setSelectedCareer(career)} sx={{ p: 2, borderRadius: "14px", cursor: "pointer", background: selectedCareer?.id === career.id ? `${career.color}15` : cardBg, border: selectedCareer?.id === career.id ? `2px solid ${career.color}` : `1px solid ${borderColor}`, transition: "all 0.2s ease", "&:hover": { borderColor: `${career.color}50`, transform: "translateY(-2px)" } }}>
+                                {CAREER_PATHS.map((career, idx) => (
+                                    <Box key={career.id} onClick={() => setSelectedCareer(career)} sx={{ p: 2, borderRadius: "14px", cursor: "pointer", background: selectedCareer?.id === career.id ? `${career.color}15` : cardBg, border: selectedCareer?.id === career.id ? `2px solid ${career.color}` : `1px solid ${borderColor}`, transition: "all 0.2s ease", animation: `clayPop 0.4s ${Math.min(idx * 0.05, 0.4)}s cubic-bezier(0.22, 1, 0.36, 1) both`, "&:hover": { borderColor: `${career.color}50`, transform: "translateY(-2px)" } }}>
                                         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
                                             <Box sx={{ color: career.color }}>{career.icon}</Box>
                                             <Typography sx={{ fontSize: 13, fontWeight: 600, color: textPrimary }}>{career.title}</Typography>
@@ -128,7 +128,7 @@ const CareerOnboarding = ({ onComplete }) => {
                             </Box>
                             <Box sx={{ display: "flex", gap: 1 }}>
                                 <Button onClick={handleBack} startIcon={<ArrowBackRoundedIcon />} sx={{ color: textSecondary, textTransform: "none" }}>Back</Button>
-                                <Button onClick={handleNext} disabled={!selectedCareer} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ ml: "auto", height: 40, px: 3, borderRadius: "10px", background: "linear-gradient(135deg, #4f8ef7, #9b6dff)", textTransform: "none", "&.Mui-disabled": { opacity: 0.4 } }}>Continue</Button>
+                                <Button onClick={handleNext} disabled={!selectedCareer} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ ml: "auto", height: 40, px: 3, borderRadius: "10px", background: "linear-gradient(135deg, #4f8ef7, #9b6dff)", color: "#fff", textTransform: "none", "&.Mui-disabled": { opacity: 0.4 } }}>Continue</Button>
                             </Box>
                         </Box>
                     </Fade>
@@ -142,8 +142,8 @@ const CareerOnboarding = ({ onComplete }) => {
                             <Typography sx={{ fontSize: 13, color: textSecondary, mb: 3 }}>This helps us calibrate the difficulty of your assessments</Typography>
                             <FormControl component="fieldset" sx={{ width: "100%", mb: 3 }}>
                                 <RadioGroup value={experience} onChange={(e) => setExperience(e.target.value)}>
-                                    {EXPERIENCE_LEVELS.map((level) => (
-                                        <Box key={level.id} sx={{ p: 2, borderRadius: "12px", mb: 1, background: experience === level.id ? (darkMode ? "rgba(79,142,247,0.1)" : "rgba(79,142,247,0.05)") : cardBg, border: experience === level.id ? "2px solid #4f8ef7" : `1px solid ${borderColor}`, transition: "all 0.2s ease" }}>
+                                    {EXPERIENCE_LEVELS.map((level, idx) => (
+                                        <Box key={level.id} sx={{ p: 2, borderRadius: "12px", mb: 1, background: experience === level.id ? (darkMode ? "rgba(79,142,247,0.1)" : "rgba(79,142,247,0.05)") : cardBg, border: experience === level.id ? "2px solid #4f8ef7" : `1px solid ${borderColor}`, transition: "all 0.2s ease", animation: `clayPop 0.35s ${Math.min(idx * 0.05, 0.3)}s cubic-bezier(0.22, 1, 0.36, 1) both` }}>
                                             <FormControlLabel value={level.id} control={<Radio sx={{ color: darkMode ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)", "&.Mui-checked": { color: "#4f8ef7" } }} />} label={
                                                 <Box>
                                                     <Typography sx={{ fontSize: 14, fontWeight: 600, color: textPrimary }}>{level.label}</Typography>
@@ -156,7 +156,7 @@ const CareerOnboarding = ({ onComplete }) => {
                             </FormControl>
                             <Box sx={{ display: "flex", gap: 1 }}>
                                 <Button onClick={handleBack} startIcon={<ArrowBackRoundedIcon />} sx={{ color: textSecondary, textTransform: "none" }}>Back</Button>
-                                <Button onClick={handleNext} disabled={!experience} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ ml: "auto", height: 40, px: 3, borderRadius: "10px", background: "linear-gradient(135deg, #4f8ef7, #9b6dff)", textTransform: "none", "&.Mui-disabled": { opacity: 0.4 } }}>Continue</Button>
+                                <Button onClick={handleNext} disabled={!experience} variant="contained" endIcon={<ArrowForwardRoundedIcon />} sx={{ ml: "auto", height: 40, px: 3, borderRadius: "10px", background: "linear-gradient(135deg, #4f8ef7, #9b6dff)", color: "#fff", textTransform: "none", "&.Mui-disabled": { opacity: 0.4 } }}>Continue</Button>
                             </Box>
                         </Box>
                     </Fade>
@@ -181,12 +181,12 @@ const CareerOnboarding = ({ onComplete }) => {
                                 </Box>
                                 <Typography sx={{ fontSize: 11, color: textSecondary, mb: 1 }}>Key Skills You'll Learn:</Typography>
                                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                                    {selectedCareer?.skills.map((skill) => (
+                                    {selectedCareer?.skills.map((skill, idx) => (
                                         <Chip key={skill} label={skill} size="small" sx={{ fontSize: 10, height: 22, background: `${selectedCareer?.color}15`, color: selectedCareer?.color, border: `1px solid ${selectedCareer?.color}30` }} />
                                     ))}
                                 </Box>
                             </Box>
-                            <Button onClick={handleComplete} disabled={saving} variant="contained" endIcon={saving ? null : <LightbulbRoundedIcon />} sx={{ height: 48, px: 5, borderRadius: "12px", background: `linear-gradient(135deg, ${selectedCareer?.color}, #4f8ef7)`, textTransform: "none", fontSize: 14 }}>
+                            <Button onClick={handleComplete} disabled={saving} variant="contained" endIcon={saving ? null : <LightbulbRoundedIcon />} sx={{ height: 48, px: 5, borderRadius: "12px", background: `linear-gradient(135deg, ${selectedCareer?.color}, #4f8ef7)`, color: "#fff", textTransform: "none", fontSize: 14 }}>
                                 {saving ? "Setting up..." : "Start Learning"}
                             </Button>
                         </Box>

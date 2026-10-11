@@ -1,4 +1,4 @@
-﻿from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_session
 from auth import get_current_user
@@ -8,6 +8,7 @@ from models import User
 router = APIRouter(prefix="/roadmap", tags=["roadmap"])
 
 
+@router.get("")
 @router.get("/")
 async def get_roadmap(
     session: AsyncSession = Depends(get_session),
