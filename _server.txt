@@ -47,3 +47,8 @@ INFO:     127.0.0.1:61664 - "GET /api/user/dashboard HTTP/1.1" 200 OK
 INFO:     127.0.0.1:61664 - "GET /api/user/dashboard HTTP/1.1" 200 OK
 INFO:     127.0.0.1:52550 - "OPTIONS /api/study HTTP/1.1" 200 OK
 INFO:     127.0.0.1:52550 - "POST /api/study HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:52198 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52198 - "GET /api/auth/me HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52198 - "GET /api/user/dashboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52198 - "GET /api/user/dashboard HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53362 - "POST /api/study HTTP/1.1" 404 Not Found
