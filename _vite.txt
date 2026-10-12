@@ -1,0 +1,43 @@
+
+> sih-hack-demo@0.0.0 dev
+> vite
+
+
+  [32m[1mVITE[22m v8.2.1[39m  [2mready in [0m[1m3863[22m[2m[0m ms[22m
+
+  [32m➜[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[2m  [32m➜[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[2m[32m  ➜[39m[22m[2m  press [22m[1mh + enter[22m[2m to show help[22m
+[2m6:58:41 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [optimizer] bundling dependencies...
+[2m7:14:28 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/GapAnalysis.jsx[22m
+[2m7:14:30 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/Progress.jsx[22m
+[2m7:56:42 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m7:56:46 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m7:56:49 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m9:04:15 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AuthContext.jsx, /src/Home.jsx, /src/SkillProfile.jsx, /src/GapAnalysis.jsx, /src/Courses.jsx, /src/Settings.jsx, /src/Roadmap.jsx, /src/Login.jsx, /src/Achievement.jsx, /src/Leaderboard.jsx, /src/Progress.jsx, /src/CareerOnboarding.jsx, /src/Practice.jsx, /src/Register.jsx, /src/FocusTimer.jsx, /src/AIChatbot.jsx[22m
+[2m9:04:15 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [33mhmr invalidate [39m[2m/src/AuthContext.jsx[22m Could not Fast Refresh ("default" export is incompatible). Learn more at https://github.com/vitejs/vite-plugin-react/tree/main/packages/plugin-react#consistent-components-exports
+[2m9:04:15 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mpage reload [39m[2msrc/AuthContext.jsx[22m
+[2m9:07:10 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m9:07:11 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mdependencies optimized: [33m@mui/icons-material/ChatBubbleOutlineRounded, @mui/icons-material/CheckRounded, @mui/icons-material/ChildCareRounded, @mui/icons-material/ContentCopyRounded, @mui/icons-material/MenuBookRounded, @mui/icons-material/QuizRounded[32m[39m
+[2m9:07:11 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32moptimized dependencies changed. reloading[39m
+[2m9:07:40 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m9:10:02 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m9:34:32 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m9:45:39 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:27:48 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:27:50 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:27:53 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:27:56 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:32:19 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:32:22 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:32:25 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:32:28 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:32:31 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:32:35 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:32:38 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:35:09 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:37:38 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mdependency optimized: [33m@mui/icons-material/HistoryRounded[32m[39m
+[2m10:42:04 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:42:07 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/AIChatbot.jsx[22m
+[2m10:45:10 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/Courses.jsx[22m
+[2m10:45:13 pm[22m [36m[1m[vite][22m[39m [90m[2m(client)[22m[39m [32mhmr update [39m[2m/src/SkillProfile.jsx[22m

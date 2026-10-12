@@ -322,9 +322,8 @@ ROADMAPS = {
 }
 
 
-def generate_roadmap(target_career: str, user_skills: Dict[str, int]) -> dict:
-    steps = ROADMAPS.get(target_career, ROADMAPS["AI / ML Engineer"])
-
+def compute_roadmap_metrics(steps: List[dict], user_skills: Dict[str, int], target_career: str) -> dict:
+    """Derive per-step status + overall progress from real skill scores."""
     result = []
     for step in steps:
         relevant = [s for s in step["skills"] if s in user_skills]
@@ -346,6 +345,11 @@ def generate_roadmap(target_career: str, user_skills: Dict[str, int]) -> dict:
         "inProgressSteps": sum(1 for s in result if s["status"] == "In Progress"),
         "totalSteps": len(result),
     }
+
+
+def generate_roadmap(target_career: str, user_skills: Dict[str, int]) -> dict:
+    steps = ROADMAPS.get(target_career, ROADMAPS["AI / ML Engineer"])
+    return compute_roadmap_metrics(steps, user_skills, target_career)
 
 
 # ---------------------------------------------------------------------------

@@ -307,8 +307,8 @@ const SkillProfile = () => {
 
             {/* Edit Skills Modal */}
             <Dialog open={editOpen} onClose={() => setEditOpen(false)} maxWidth="sm" fullWidth
-                PaperProps={{ sx: { backgroundColor: t.glass.panel, border: `1px solid ${t.border.subtle}`,
-                    borderRadius:"20px" } }}>
+                slotProps={{ paper: { sx: { backgroundColor: t.glass.panel, border: `1px solid ${t.border.subtle}`,
+                    borderRadius:"20px" } } }}>
                 <DialogTitle sx={{ color: t.text.primary }}>
                     <Typography sx={{ fontSize:18, fontWeight:700 }}>Update Your Skills</Typography>
                     <Typography sx={{ fontSize:12, color: t.text.secondary, mt:0.5 }}>

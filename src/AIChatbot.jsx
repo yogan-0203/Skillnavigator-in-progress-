@@ -1,18 +1,52 @@
 import { useState, useRef, useEffect } from "react";
 import {
     Box, Typography, TextField, IconButton, Fab, Drawer,
-    Fade, Chip, Avatar,
+    Fade, Chip, Avatar, Tooltip, Button, List, ListItemButton,
+    ListItemText, Divider, Select, MenuItem, FormControl,
 } from "@mui/material";
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import LightbulbRoundedIcon from "@mui/icons-material/LightbulbRounded";
+import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
+import EditRoundedIcon from "@mui/icons-material/EditRounded";
+import ContentCopyRoundedIcon from "@mui/icons-material/ContentCopyRounded";
+import CheckRoundedIcon from "@mui/icons-material/CheckRounded";
+import RefreshRoundedIcon from "@mui/icons-material/RefreshRounded";
+import StopRoundedIcon from "@mui/icons-material/StopRounded";
+import MenuBookRoundedIcon from "@mui/icons-material/MenuBookRounded";
+import QuizRoundedIcon from "@mui/icons-material/QuizRounded";
+import ChildCareRoundedIcon from "@mui/icons-material/ChildCareRounded";
 import PsychologyRoundedIcon from "@mui/icons-material/PsychologyRounded";
+import ChatBubbleOutlineRoundedIcon from "@mui/icons-material/ChatBubbleOutlineRounded";
+import HistoryRoundedIcon from "@mui/icons-material/HistoryRounded";
 import RocketLaunchRoundedIcon from "@mui/icons-material/RocketLaunchRounded";
-import { mentorAPI } from "./api";
+import { studyAPI } from "./api";
+import { studyStore } from "./studyStore";
+import StudyMarkdown from "./StudyMarkdown";
 import { useTheme } from "./ThemeContext";
-import { getTokens, ACCENTS } from "./theme/tokens";
-import { ClayCard, GlassPanel, ClayButton, PageHeader, StatTile, SegmentTabs, EmptyState, LoadingState, ChartTooltip } from "./theme/Clay";
+import { getTokens } from "./theme/tokens";
+
+const MODES = [
+    { id: "explain", label: "Explain", icon: <MenuBookRoundedIcon sx={{ fontSize: 13 }} />, hint: "Clear explanation with examples" },
+    { id: "guide", label: "Guide me", icon: <PsychologyRoundedIcon sx={{ fontSize: 13 }} />, hint: "Socratic hints before the answer" },
+    { id: "quiz", label: "Quiz me", icon: <QuizRoundedIcon sx={{ fontSize: 13 }} />, hint: "Practice questions + feedback" },
+    { id: "simplify", label: "Simplify", icon: <ChildCareRoundedIcon sx={{ fontSize: 13 }} />, hint: "ELI5 version" },
+];
+
+const LEVELS = [
+    { id: "beginner", label: "Beginner" },
+    { id: "intermediate", label: "Intermediate" },
+    { id: "advanced", label: "Advanced" },
+];
+
+const errText = (code) => {
+    if (code === "RATE_LIMIT") return "You're asking a bit fast — wait a minute, then hit retry. Your chat is saved.";
+    if (code === "EMPTY") return "Please type a question first.";
+    if (code === "ABORTED") return "Stopped. Hit retry or ask something else.";
+    return "The tutor hit a snag (network or server). Your chat is saved — hit retry.";
+};
 
 const QUICK_PROMPTS = [
     { icon: <LightbulbRoundedIcon sx={{ fontSize: 14 }} />, text: "What skills do I need for AI/ML?", color: "#9b6dff" },
@@ -48,44 +82,195 @@ const lowerMsg = message.toLowerCase().trim();
     return `That's a great question! Let me think about that...\n\nBased on your current profile and goals, here are my recommendations:\n\n**Immediate Actions:**\n→ Take a skill assessment to identify your level\n→ Browse relevant courses in your domain\n→ Set weekly learning goals\n\n**This Week:**\n→ Complete one learning module\n→ Practice with hands-on exercises\n→ Track your progress on the dashboard\n\nIs there anything specific you'd like to dive deeper into? I can help with learning paths, career advice, or technical questions!`;
 };
 
-const AIChatbot = ({ domain }) => {
-    const [open, setOpen] = useState(false);
-    const [messages, setMessages] = useState([
-        { role: "ai", text: `Hi! I'm your AI Career Mentor. I see you're interested in ${domain?.label || "learning"}. How can I help you today?` }
-    ]);
-    const [input, setInput] = useState("");
-    const [typing, setTyping] = useState(false);
-    const messagesEndRef = useRef(null);
-
+const AIChatbot = () => {
     const { darkMode } = useTheme();
     const t = getTokens(darkMode);
-    const tx = t.text;
+    const [open, setOpen] = useState(false);
+    const [convoId, setConvoId] = useState(() => studyStore.newId());
+    const [messages, setMessages] = useState([]);
+    const [convos, setConvos] = useState(() => studyStore.list());
+    const [mode, setMode] = useState("explain");
+    const [level, setLevel] = useState("beginner");
+    const [streaming, setStreaming] = useState(false);
+    const [engine, setEngine] = useState(null);   // "llm" | "local" — from last reply
+    const [followups, setFollowups] = useState([]);
+    const [err, setErr] = useState("");
+    const [renaming, setRenaming] = useState(null);
+    const [renameText, setRenameText] = useState("");
+    const [input, setInput] = useState("");
+    const [title, setTitle] = useState("New chat");
+    const [historyOpen, setHistoryOpen] = useState(false);
+
+    const messagesEndRef = useRef(null);
+    const abortRef = useRef(null);
+    const persistRef = useRef({ id: convoId, title: "New chat" });
+    const stateRef = useRef({ messages, mode, level });
+    stateRef.current = { messages, mode, level };
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
+    }, [messages, open]);
 
-    const sendMessage = async (text) => {
-        if (!text.trim()) return;
-        const userMsg = { role: "user", text: text.trim() };
-        const history = [...messages, userMsg].map((m) => ({
-            role: m.role === "ai" ? "mentor" : "user",
-            text: m.text,
-        }));
-        setMessages(prev => [...prev, userMsg]);
-        setInput("");
-        setTyping(true);
-
-        try {
-            const { data } = await mentorAPI.chat(userMsg.text, history.slice(-10));
-            setMessages(prev => [...prev, { role: "ai", text: data.reply }]);
-        } catch {
-            // Backend offline - fall back to the local canned response
-            setMessages(prev => [...prev, { role: "ai", text: getAIResponse(text) }]);
-        } finally {
-            setTyping(false);
+    // Persist the active conversation to localStorage and refresh the list.
+    const persist = () => {
+        const s = stateRef.current;
+        if (persistRef.current.id && s.messages.length) {
+            studyStore.save({
+                id: persistRef.current.id,
+                title: persistRef.current.title,
+                mode: s.mode,
+                level: s.level,
+                messages: s.messages,
+            });
+            setConvos(studyStore.list());
         }
     };
+
+    // Persist on unmount.
+    useEffect(() => () => persist(), []);
+
+    const sendMessage = (rawText, base = messages) => {
+        const text = (rawText ?? input).trim();
+        if (!text || streaming) return;
+        setErr("");
+        setFollowups([]);
+
+        // Name the conversation from the first user message.
+        if (!base.length) {
+            const named = text.length > 40 ? text.slice(0, 40) + "..." : text;
+            setTitle(named);
+            persistRef.current.title = named;
+        }
+
+        const historyMsgs = [...base, { role: "user", text }];
+        setMessages([...historyMsgs, { role: "ai", text: "", streaming: true }]);
+        setInput("");
+        setStreaming(true);
+
+        const history = historyMsgs.map((m) => ({
+            role: m.role === "ai" ? "assistant" : "user",
+            content: m.text,
+        }));
+
+        const controller = new AbortController();
+        abortRef.current = controller;
+
+        let acc = "";
+        studyAPI.streamChat(history, mode, level, (token, done, info) => {
+            if (done) {
+                setEngine(info?.engine || null);
+                setFollowups(info?.followups || []);
+            } else if (token) {
+                acc += token;
+                setMessages([...historyMsgs, { role: "ai", text: acc, streaming: true }]);
+            }
+        }, controller.signal)
+            .catch((e) => {
+                const code = e?.name === "AbortError" ? "ABORTED" : e?.message;
+                setErr(errText(code));
+            })
+            .finally(() => {
+                const finalMsgs = [...historyMsgs, { role: "ai", text: acc, streaming: false }];
+                setMessages(finalMsgs);
+                setStreaming(false);
+                abortRef.current = null;
+                stateRef.current = { messages: finalMsgs, mode, level };
+                persist();
+            });
+    };
+
+    const stop = () => abortRef.current?.abort();
+
+    const retry = () => {
+        if (streaming) return;
+        let idx = -1;
+        for (let i = messages.length - 1; i >= 0; i--) {
+            if (messages[i].role === "user") { idx = i; break; }
+        }
+        if (idx === -1) return;
+        sendMessage(messages[idx].text, messages.slice(0, idx));
+    };
+
+    const newChat = () => {
+        if (streaming) abortRef.current?.abort();
+        const id = studyStore.newId();
+        setConvoId(id);
+        persistRef.current = { id, title: "New chat" };
+        setMessages([]);
+        setTitle("New chat");
+        setMode("explain");
+        setLevel("beginner");
+        setEngine(null);
+        setFollowups([]);
+        setErr("");
+        setInput("");
+        setStreaming(false);
+        setHistoryOpen(false);
+    };
+
+    const openConvo = (id) => {
+        const c = studyStore.get(id);
+        if (!c) return;
+        if (streaming) abortRef.current?.abort();
+        setConvoId(id);
+        persistRef.current = { id, title: c.title || "New chat" };
+        setMessages(Array.isArray(c.messages) ? c.messages : []);
+        setTitle(c.title || "New chat");
+        setMode(c.mode || "explain");
+        setLevel(c.level || "beginner");
+        setEngine(null);
+        setFollowups([]);
+        setErr("");
+        setStreaming(false);
+        setHistoryOpen(false);
+    };
+
+    const deleteConvo = (id) => {
+        studyStore.remove(id);
+        setConvos(studyStore.list());
+        if (id === convoId) {
+            const nid = studyStore.newId();
+            setConvoId(nid);
+            persistRef.current = { id: nid, title: "New chat" };
+            setMessages([]);
+            setTitle("New chat");
+            setFollowups([]);
+            setErr("");
+            setEngine(null);
+        }
+    };
+
+    const startRename = (id, current) => {
+        setRenaming(id);
+        setRenameText(current || "");
+    };
+
+    const commitRename = () => {
+        if (renaming && renameText.trim()) {
+            const clean = renameText.trim().slice(0, 60);
+            studyStore.rename(renaming, clean);
+            setConvos(studyStore.list());
+            if (renaming === convoId) {
+                setTitle(clean);
+                persistRef.current.title = clean;
+            }
+        }
+        setRenaming(null);
+        setRenameText("");
+    };
+
+    const copyMessage = async (i) => {
+        const text = messages[i]?.text || "";
+        try { await navigator.clipboard.writeText(text); } catch {
+            const ta = document.createElement("textarea");
+            ta.value = text; document.body.appendChild(ta); ta.select();
+            try { document.execCommand("copy"); } catch { /* ignore */ }
+            ta.remove();
+        }
+        setMessages((prev) => prev.map((m, j) => (j === i ? { ...m, copied: true } : m)));
+        setTimeout(() => setMessages((prev) => prev.map((m, j) => (j === i ? { ...m, copied: false } : m))), 1500);
+    };
+
     return (
         <>
             {/* Floating Action Button */}
@@ -105,81 +290,199 @@ const AIChatbot = ({ domain }) => {
 
             {/* Chat Drawer */}
             <Drawer anchor="right" open={open} onClose={() => setOpen(false)}
-                PaperProps={{ sx: { width: 400, maxWidth: "90vw",
+                slotProps={{ paper: { sx: { width: 400, maxWidth: "90vw",
                     background: t.glass.panel, backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)",
-                    borderLeft: `1px solid ${t.border.subtle}` } }}
+                    borderLeft: `1px solid ${t.border.subtle}` } } }}
             >
                 <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
                     {/* Header */}
-                    <Box sx={{ p: 2, borderBottom: `1px solid ${t.border.subtle}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Box sx={{ width: 36, height: 36, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(155,109,255,0.2), rgba(79,142,247,0.2))", border: "1px solid rgba(155,109,255,0.3)" }}>
+                    <Box sx={{ p: 1.5, borderBottom: `1px solid ${t.border.subtle}`, display: "flex", alignItems: "center", gap: 1 }}>
+                        <Tooltip title="Chat history">
+                            <IconButton onClick={() => setHistoryOpen(true)} sx={{ color: t.text.secondary }}>
+                                <HistoryRoundedIcon sx={{ fontSize: 20 }} />
+                            </IconButton>
+                        </Tooltip>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1, minWidth: 0 }}>
+                            <Box sx={{ width: 36, height: 36, borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", background: "linear-gradient(135deg, rgba(155,109,255,0.2), rgba(79,142,247,0.2))", border: "1px solid rgba(155,109,255,0.3)", flexShrink: 0 }}>
                                 <SmartToyRoundedIcon sx={{ fontSize: 20, color: "#9b6dff" }} />
                             </Box>
-                            <Box>
-                                <Typography sx={{ fontSize: 14, fontWeight: 600 }}>AI Career Mentor</Typography>
-                                <Typography sx={{ fontSize: 10, color: "#3ecf8e" }}>Online</Typography>
+                            <Box sx={{ minWidth: 0 }}>
+                                <Typography noWrap sx={{ fontSize: 14, fontWeight: 600, maxWidth: 190 }}>{title}</Typography>
+                                <Typography sx={{ fontSize: 10, color: engine === "local" ? "#f7934c" : "#3ecf8e" }}>
+                                    {engine === "llm" ? "Neural engine online" : engine === "local" ? "Local engine" : "Online"}
+                                </Typography>
                             </Box>
                         </Box>
+                        <Tooltip title="New chat">
+                            <IconButton onClick={newChat} sx={{ color: t.text.secondary }}>
+                                <AddRoundedIcon sx={{ fontSize: 22 }} />
+                            </IconButton>
+                        </Tooltip>
                         <IconButton onClick={() => setOpen(false)} sx={{ color: t.text.secondary }}>
                             <CloseRoundedIcon sx={{ fontSize: 20 }} />
                         </IconButton>
                     </Box>
 
                     {/* Messages */}
-                    <Box sx={{ flex: 1, overflowY: "auto", p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                    <Box sx={{ flex: 1, overflowY: "auto", p: 2, display: "flex", flexDirection: "column", gap: 1.5, minWidth: 0 }}>
                         {messages.map((msg, i) => (
-                            <Fade key={i} in timeout={300}>
-                                <Box sx={{ display: "flex", gap: 1, flexDirection: msg.role === "user" ? "row-reverse" : "row" }}>
-                                    <Avatar sx={{ width: 28, height: 28, background: msg.role === "ai" ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : t.glass.chip, flexShrink: 0 }}>
+                            <Fade key={i} in timeout={250}>
+                                <Box sx={{ display: "flex", gap: 1.5, flexDirection: msg.role === "user" ? "row-reverse" : "row" }}>
+                                    <Avatar sx={{ width: 30, height: 30, background: msg.role === "ai" ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : t.glass.chip, flexShrink: 0 }}>
                                         {msg.role === "ai" ? <SmartToyRoundedIcon sx={{ fontSize: 16 }} /> : <Typography sx={{ fontSize: 12 }}>U</Typography>}
                                     </Avatar>
-                                    <Box sx={{ maxWidth: "80%", p: 1.5, borderRadius: msg.role === "user" ? "14px 14px 4px 14px" : "14px 14px 14px 4px",
-                                        background: msg.role === "user" ? "linear-gradient(135deg, #4f8ef7, #9b6dff)" : t.glass.inset, border: msg.role === "ai" ? `1px solid ${t.border.subtle}` : "none" }}>
-                                        <Typography sx={{ fontSize: 12, whiteSpace: "pre-wrap", lineHeight: 1.6, color: msg.role === "user" ? "#fff" : t.text.primary }}>{msg.text}</Typography>
-                                    </Box>
+                                    {msg.role === "ai" ? (
+                                        <Box sx={{ flex: 1, minWidth: 0, p: 1.5, borderRadius: 4, bgcolor: t.glass.face, border: `1px solid ${t.border.subtle}`, borderTopLeftRadius: 2, maxWidth: "100%" }}>
+                                            {msg.text ? <StudyMarkdown text={msg.text} t={t} /> : (
+                                                <Typography sx={{ fontSize: 12, color: t.text.muted }}>Thinking…</Typography>
+                                            )}
+                                            {msg.text && !msg.streaming && (
+                                                <Box sx={{ display: "flex", gap: 0.5, mt: 1 }}>
+                                                    <Chip size="small" icon={msg.copied ? <CheckRoundedIcon sx={{ fontSize: 13 }} /> : <ContentCopyRoundedIcon sx={{ fontSize: 13 }} />} label={msg.copied ? "Copied" : "Copy"} onClick={() => copyMessage(i)} variant="outlined" sx={{ fontSize: 9, height: 22, color: t.text.muted, borderColor: t.border.subtle, "& .MuiChip-icon": { color: t.text.muted } }} />
+                                                    {i === messages.length - 1 && (
+                                                        <Chip size="small" icon={<RefreshRoundedIcon sx={{ fontSize: 13 }} />} label="Retry" onClick={retry} variant="outlined" sx={{ fontSize: 9, height: 22, color: t.text.muted, borderColor: t.border.subtle, "& .MuiChip-icon": { color: t.text.muted } }} />
+                                                    )}
+                                                    {engine && (
+                                                        <Chip label={engine === "llm" ? "Neural" : "Local"} size="small" variant="outlined" sx={{ fontSize: 9, height: 22, color: engine === "llm" ? "#3ecf8e" : "#f7934c", borderColor: engine === "llm" ? "rgba(62,207,142,0.3)" : "rgba(247,147,76,0.25)" }} />
+                                                    )}
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    ) : (
+                                        <Box sx={{ maxWidth: "65%", p: 1.5, borderRadius: "14px 4px 14px 14px", bgcolor: t.glass.face, border: `1px solid ${t.border.subtle}`, whiteSpace: "pre-wrap" }}>
+                                            <Typography sx={{ fontSize: 12.5, color: t.text.primary, whiteSpace: "pre-wrap" }}>{msg.text}</Typography>
+                                        </Box>
+                                    )}
                                 </Box>
                             </Fade>
                         ))}
-                        {typing && (
-                            <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                                <Avatar sx={{ width: 28, height: 28, background: "linear-gradient(135deg, #9b6dff, #4f8ef7)" }}>
-                                    <SmartToyRoundedIcon sx={{ fontSize: 16 }} />
-                                </Avatar>
-                                <Box sx={{ p: 1.5, borderRadius: "14px", background: t.glass.inset, border: `1px solid ${t.border.subtle}` }}>
-                                    <Box sx={{ display: "flex", gap: 0.5 }}>
-                                        <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: "#9b6dff", animation: "float 1s ease infinite" }} />
-                                        <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: "#4f8ef7", animation: "float 1s ease infinite 0.2s" }} />
-                                        <Box sx={{ width: 6, height: 6, borderRadius: "50%", background: "#3ecf8e", animation: "float 1s ease infinite 0.4s" }} />
-                                    </Box>
+
+                        {followups.length > 0 && !streaming && (
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 0.5 }}>
+                                {followups.map((f) => (
+                                    <Chip key={f} label={f} size="small" onClick={() => sendMessage(f)} variant="outlined" sx={{ fontSize: 11, color: t.text.secondary, borderColor: t.border.subtle, background: t.glass.face, "&:hover": { borderColor: "#9b6dff", color: "#9b6dff" } }} />
+                                ))}
+                            </Box>
+                        )}
+
+                        {err && <Box sx={{ px: 2, py: 1, border: `1px solid ${t.border.subtle}`, borderRadius: 3, background: "rgba(247,147,76,0.06)", color: "#f7934c", fontSize: 11, mb: 1 }}>⚠️ {err}</Box>}
+                        {!messages.length && (
+                            <Box sx={{ textAlign: "center", mt: 2 }}>
+                                <Typography sx={{ fontSize: 13, color: t.text.secondary, fontWeight: 600 }}>Ask me anything</Typography>
+                                <Typography sx={{ fontSize: 11, color: t.text.muted, mt: 0.5, mb: 2 }}>
+                                    {mode === "quiz" ? "I'll create practice questions first, then check your answers." : "I'll explain it clearly at your level."}
+                                </Typography>
+                                <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                                    {QUICK_PROMPTS.map((q) => (
+                                        <Button key={q.text} onClick={() => sendMessage(q.text)} variant="outlined" startIcon={q.icon}
+                                            sx={{ justifyContent: "flex-start", textTransform: "none", fontSize: 12, color: t.text.secondary, borderColor: t.border.subtle, borderRadius: 3, px: 1.5, py: 0.75, background: t.glass.face, "&:hover": { borderColor: q.color, color: q.color, background: "rgba(155,109,255,0.06)" } }}
+                                        >{q.text}</Button>
+                                    ))}
                                 </Box>
                             </Box>
                         )}
                         <div ref={messagesEndRef} />
                     </Box>
 
-                    {/* Quick Prompts */}
-                    {messages.length <= 1 && (
-                        <Box sx={{ px: 2, pb: 1, display: "flex", gap: 1, flexWrap: "wrap" }}>
-                            {QUICK_PROMPTS.map((prompt, i) => (
-                                <Chip key={i} label={prompt.text} icon={prompt.icon} onClick={() => sendMessage(prompt.text)}
-                                    sx={{ fontSize: 10, height: 28, color: prompt.color, background: `${prompt.color}10`, border: `1px solid ${prompt.color}25`, "&:hover": { background: `${prompt.color}20` } }} />
-                            ))}
+                    {/* Composer */}
+                    <Box sx={{ borderTop: `1px solid ${t.border.subtle}`, p: 1.5, background: t.glass.panel }}>
+                        <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
+                            <FormControl size="small" sx={{ flex: 1 }}>
+                                <Select value={mode} onChange={(e) => setMode(e.target.value)} disabled={streaming}
+                                    renderValue={(v) => { const m = MODES.find((x) => x.id === v); return (<Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>{m?.icon}<span>{m?.label}</span></Box>); }}
+                                    sx={{ fontSize: 11, height: 30, color: t.text.secondary, background: t.glass.face, "& .MuiOutlinedInput-notchedOutline": { borderColor: t.border.subtle }, "& .MuiSvgIcon-root": { color: t.text.muted } }}
+                                >
+                                    {MODES.map((m) => (
+                                        <MenuItem key={m.id} value={m.id} sx={{ fontSize: 12 }}>
+                                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                                {m.icon}
+                                                <Box>
+                                                    <Typography sx={{ fontSize: 12 }}>{m.label}</Typography>
+                                                    <Typography sx={{ fontSize: 10, color: t.text.muted }}>{m.hint}</Typography>
+                                                </Box>
+                                            </Box>
+                                        </MenuItem>
+                                    ))}
+                                </Select>
+                            </FormControl>
+                            <FormControl size="small" sx={{ width: 120 }}>
+                                <Select value={level} onChange={(e) => setLevel(e.target.value)} disabled={streaming}
+                                    sx={{ fontSize: 11, height: 30, color: t.text.secondary, background: t.glass.face, "& .MuiOutlinedInput-notchedOutline": { borderColor: t.border.subtle }, "& .MuiSvgIcon-root": { color: t.text.muted } }}
+                                >
+                                    {LEVELS.map((l) => (<MenuItem key={l.id} value={l.id} sx={{ fontSize: 12 }}>{l.label}</MenuItem>))}
+                                </Select>
+                            </FormControl>
                         </Box>
-                    )}
-
-                    {/* Input */}
-                    <Box sx={{ p: 2, borderTop: `1px solid ${t.border.subtle}` }}>
-                        <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
-                            <TextField fullWidth size="small" placeholder="Ask me anything..." value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-                                sx={{ "& .MuiOutlinedInput-root": { borderRadius: "12px", color: t.text.primary, "& fieldset": { borderColor: t.border.subtle }, "&:hover fieldset": { borderColor: "rgba(155,109,255,0.3)" }, "&.Mui-focused fieldset": { borderColor: "#9b6dff" } } }} />
-                            <IconButton onClick={() => sendMessage(input)} disabled={!input.trim()}
-                                sx={{ width: 40, height: 40, borderRadius: "12px", background: input.trim() ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : t.glass.inset, color: input.trim() ? "#fff" : t.text.secondary, "&:hover": { background: "linear-gradient(135deg, #b08aff, #6ba3ff)" }, "&.Mui-disabled": { background: t.glass.inset, color: t.text.secondary } }}>
-                                <SendRoundedIcon sx={{ fontSize: 18 }} />
-                            </IconButton>
+                        <Box sx={{ display: "flex", gap: 1, alignItems: "flex-end" }}>
+                            <TextField fullWidth multiline maxRows={4} placeholder="Ask your AI Career Mentor…" value={input} onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                                sx={{ "& .MuiOutlinedInput-root": { fontSize: 12.5, color: t.text.primary, background: t.glass.face, borderRadius: 3, "& fieldset": { borderColor: t.border.subtle }, "&:hover fieldset": { borderColor: "rgba(155,109,255,0.4)" }, "&.Mui-focused fieldset": { borderColor: "#9b6dff" } } }}
+                            />
+                            {streaming ? (
+                                <IconButton onClick={stop} sx={{ background: "rgba(247,147,76,0.15)", color: "#f7934c", "&:hover": { background: "rgba(247,147,76,0.25)" } }}>
+                                    <StopRoundedIcon sx={{ fontSize: 20 }} />
+                                </IconButton>
+                            ) : (
+                                <IconButton onClick={() => sendMessage()} disabled={!input.trim()}
+                                    sx={{ background: input.trim() ? "linear-gradient(135deg, #9b6dff, #4f8ef7)" : t.glass.chip, color: input.trim() ? "#fff" : t.text.muted, "&:hover": { background: input.trim() ? "linear-gradient(135deg, #b08aff, #6ba3ff)" : t.glass.chip }, "&.Mui-disabled": { background: t.glass.chip, color: t.text.muted } }}
+                                >
+                                    <SendRoundedIcon sx={{ fontSize: 20 }} />
+                                </IconButton>
+                            )}
                         </Box>
                     </Box>
                 </Box>
+            </Drawer>
+
+            {/* History Drawer */}
+            <Drawer anchor="left" open={historyOpen} onClose={() => setHistoryOpen(false)}
+                slotProps={{ paper: { sx: { width: 300, maxWidth: "85vw", background: t.glass.panel, backdropFilter: "blur(24px) saturate(1.3)", WebkitBackdropFilter: "blur(24px) saturate(1.3)", borderRight: `1px solid ${t.border.subtle}` } } }}
+            >
+                <Box sx={{ p: 2, display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: `1px solid ${t.border.subtle}` }}>
+                    <Typography sx={{ fontSize: 14, fontWeight: 600 }}>Your chats</Typography>
+                    <IconButton onClick={() => setHistoryOpen(false)} sx={{ color: t.text.secondary }}>
+                        <CloseRoundedIcon sx={{ fontSize: 20 }} />
+                    </IconButton>
+                </Box>
+                <Box sx={{ p: 1.5 }}>
+                    <Button fullWidth variant="outlined" startIcon={<AddRoundedIcon />} onClick={newChat}
+                        sx={{ justifyContent: "flex-start", textTransform: "none", fontSize: 12, color: "#9b6dff", borderColor: "rgba(155,109,255,0.4)", "&:hover": { borderColor: "#9b6dff", background: "rgba(155,109,255,0.06)" } }}
+                    >New chat</Button>
+                </Box>
+                <Divider sx={{ borderColor: t.border.subtle }} />
+                <List sx={{ flex: 1, overflowY: "auto", p: 1 }}>
+                    {convos.length === 0 && (
+                        <Typography sx={{ fontSize: 12, color: t.text.muted, textAlign: "center", mt: 4, px: 2 }}>
+                            No saved chats yet. Start a conversation and it'll show up here.
+                        </Typography>
+                    )}
+                    {convos.map((c) => (
+                        <ListItemButton key={c.id} onClick={() => openConvo(c.id)}
+                            sx={{ borderRadius: 2, mb: 0.5, background: c.id === convoId ? "rgba(155,109,255,0.1)" : "transparent", "&:hover": { background: "rgba(155,109,255,0.08)" } }}
+                        >
+                            <ChatBubbleOutlineRoundedIcon sx={{ fontSize: 16, mr: 1.5, color: c.id === convoId ? "#9b6dff" : t.text.muted }} />
+                            {renaming === c.id ? (
+                                <TextField autoFocus fullWidth size="small" value={renameText} onChange={(e) => setRenameText(e.target.value)} onClick={(e) => e.stopPropagation()} onBlur={commitRename}
+                                    onKeyDown={(e) => { if (e.key === "Enter") commitRename(); if (e.key === "Escape") { setRenaming(null); setRenameText(""); } }}
+                                    sx={{ "& .MuiInputBase-input": { fontSize: 12, color: t.text.primary } }}
+                                />
+                            ) : (
+                                <>
+                                    <ListItemText primary={c.title || "New chat"} secondary={new Date(c.updatedAt || Date.now()).toLocaleDateString()}
+                                        primaryTypographyProps={{ noWrap: true, sx: { fontSize: 12.5, color: t.text.primary } }}
+                                        secondaryTypographyProps={{ sx: { fontSize: 10, color: t.text.muted } }}
+                                    />
+                                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); startRename(c.id, c.title); }} sx={{ color: t.text.muted }}>
+                                        <EditRoundedIcon sx={{ fontSize: 15 }} />
+                                    </IconButton>
+                                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); deleteConvo(c.id); }} sx={{ color: t.text.muted, "&:hover": { color: "#f76060" } }}>
+                                        <DeleteOutlineRoundedIcon sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                </>
+                            )}
+                        </ListItemButton>
+                    ))}
+                </List>
             </Drawer>
         </>
     );

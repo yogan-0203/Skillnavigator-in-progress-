@@ -51,6 +51,10 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 const GapAnalysis = () => {
+    const { darkMode } = useTheme();
+    const t = getTokens(darkMode);
+    const tx = t.text;
+    const card = { border: `1px solid ${t.border.subtle}`, borderRadius: "20px", background: t.glass.face };
     const navigate = useNavigate();
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);

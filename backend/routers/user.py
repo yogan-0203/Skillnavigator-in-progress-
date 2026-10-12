@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_session
 from auth import get_current_user
 from ai_service import generate_ai_insight
+from brain import insight as brain_insight
 from models import User
 
 router = APIRouter(prefix="/user", tags=["user"])
@@ -21,7 +22,6 @@ async def dashboard(
 ):
     skills = current_user.skills or {}
     target_career = current_user.target_career or "AI / ML Engineer"
-    insight = generate_ai_insight(skills, target_career)
 
     enrolled = current_user.enrolled_courses or []
     completed = sum(1 for e in enrolled if isinstance(e, dict) and e.get("status") == "completed")
@@ -29,6 +29,26 @@ async def dashboard(
 
     skill_values = list(skills.values())
     overall_score = round(sum(skill_values) / len(skill_values)) if skill_values else 0
+
+    # LLM-synthesised insight with the heuristic version as automatic fallback
+    fallback_insight = generate_ai_insight(skills, target_career)
+    ai_insight, engine = await brain_insight(
+        skills,
+        target_career,
+        stats={
+            "overallScore": overall_score,
+            "completedCourses": completed,
+            "inProgressCourses": in_progress,
+            "totalCourses": len(enrolled),
+            "assessmentsTaken": len(current_user.assessment_history or []),
+            "level": current_user.level or 1,
+            "xp": current_user.xp or 0,
+            "streak": current_user.streak or 0,
+            "assessmentHistory": current_user.assessment_history or [],
+        },
+        fallback=fallback_insight,
+    )
+    insight = {**ai_insight, "engine": engine}
 
     return {
         "user": {

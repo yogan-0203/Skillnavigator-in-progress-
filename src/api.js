@@ -101,6 +101,48 @@ export const mentorAPI = {
     history: () => API.get("/mentor/history"),
 };
 
+// ── StudyBuddy (streaming AI tutor: explain / guide / quiz / simplify) ────
+export const studyAPI = {
+    // Streams SSE (data: {"token"|"done"|"error"}) via fetch + ReadableStream.
+    // onToken(text, done, info) is called for every chunk and once at the end.
+    streamChat: async (messages, mode = "explain", level = "beginner", onToken, signal) => {
+        const token = localStorage.getItem("sn_token");
+        const res = await fetch("http://localhost:5000/api/study", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ messages, mode, level }),
+            signal,
+        });
+        if (!res.ok || !res.body) {
+            throw new Error(res.status === 429 ? "RATE_LIMIT" : `HTTP_${res.status}`);
+        }
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buf = "";
+        let info = { engine: "local", followups: [] };
+        for (;;) {
+            const { value, done } = await reader.read();
+            if (done) break;
+            buf += decoder.decode(value, { stream: true });
+            let idx;
+            while ((idx = buf.indexOf("\n\n")) !== -1) {
+                const raw = buf.slice(0, idx).trim();
+                buf = buf.slice(idx + 2);
+                if (!raw.startsWith("data:")) continue;
+                let evt;
+                try { evt = JSON.parse(raw.slice(5).trim()); } catch { continue; }
+                if (evt.token) onToken(evt.token, false, info);
+                else if (evt.error) throw new Error(evt.error === "RATE_LIMIT" ? "RATE_LIMIT" : evt.message || "STREAM_ERROR");
+                else if (evt.done) { info = { engine: evt.engine || "local", followups: evt.followups || [] }; onToken("", true, info); }
+            }
+        }
+        return info;
+    },
+};
+
 // ── Leaderboard ───────────────────────────────────────────────────────────
 export const leaderboardAPI = {
     get: () => API.get("/leaderboard"),

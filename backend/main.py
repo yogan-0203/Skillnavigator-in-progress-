@@ -17,6 +17,7 @@ from contextlib import asynccontextmanager
 from database import connect_db, close_db, AsyncSessionLocal
 from routers import auth, courses, assessment, roadmap, gap_analysis, achievements, progress, user
 from routers import practice, mentor, leaderboard
+from routers import studybuddy
 from models import Course
 from sqlalchemy import select
 
@@ -93,7 +94,11 @@ async def _seed_courses():
 async def lifespan(app: FastAPI):
     await connect_db()
     await _seed_courses()
+    from llm import status_info
+    import llm as llm_gateway
+    print(f"🤖 AI engine: {status_info()}")
     yield
+    await llm_gateway.aclose()
     await close_db()
 
 
@@ -124,6 +129,7 @@ app.include_router(progress.router,     prefix="/api")
 app.include_router(user.router,         prefix="/api")
 app.include_router(practice.router,     prefix="/api")
 app.include_router(mentor.router,       prefix="/api")
+app.include_router(studybuddy.router,   prefix="/api")
 app.include_router(leaderboard.router,  prefix="/api")
 
 

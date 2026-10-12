@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database import get_session
 from auth import get_current_user
 from ai_service import generate_roadmap
+from brain import roadmap as brain_roadmap
 from models import User
 
 router = APIRouter(prefix="/roadmap", tags=["roadmap"])
@@ -16,7 +17,10 @@ async def get_roadmap(
 ):
     user_skills = current_user.skills or {}
     target_career = current_user.target_career or "AI / ML Engineer"
-    return generate_roadmap(target_career, user_skills)
+    fallback = generate_roadmap(target_career, user_skills)
+    result, engine = await brain_roadmap(target_career, user_skills, fallback)
+    result["engine"] = engine
+    return result
 
 
 @router.get("/public")

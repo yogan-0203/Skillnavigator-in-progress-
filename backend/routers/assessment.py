@@ -7,6 +7,7 @@ from sqlalchemy import select
 from database import get_session
 from auth import get_current_user
 from ai_service import generate_questions, analyse_results, VALID_TOPICS
+from brain import questions as brain_questions
 from models import User, Assessment
 
 router = APIRouter(prefix="/assessment", tags=["assessment"])
@@ -35,7 +36,13 @@ async def generate_assessment(
     if body.topic not in VALID_TOPICS:
         raise HTTPException(400, f"Invalid topic. Choose from: {', '.join(VALID_TOPICS)}")
 
-    questions = generate_questions(body.topic, body.questionCount)
+    # Fresh, difficulty-calibrated questions from the LLM when configured;
+    # otherwise the deterministic question bank (same shape either way).
+    fallback_questions = generate_questions(body.topic, body.questionCount)
+    user_score = (current_user.skills or {}).get(body.topic)
+    questions, engine = await brain_questions(
+        body.topic, body.questionCount, user_score, fallback_questions
+    )
 
     # Store full questions (with answers) in DB
     assessment = Assessment(
@@ -63,6 +70,7 @@ async def generate_assessment(
         "topic": assessment.topic,
         "questions": client_questions,
         "totalQuestions": len(questions),
+        "engine": engine,
     }
 
 

@@ -288,12 +288,12 @@ const Courses = () => {
             <Dialog open={testModal.open}
                 onClose={() => { setTestModal({open:false, course:null}); setResult(null); }}
                 maxWidth="sm" fullWidth
-                PaperProps={{ sx: {
+                slotProps={{ paper: { sx: {
                     backgroundColor: t.glass.panel,
                     border:"1px solid rgba(155,109,255,0.2)",
                     borderRadius:"20px",
                     maxHeight:"90vh",
-                }}}>
+                }}}}>
                 <DialogTitle sx={{ color: t.text.primary, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
                     <Box sx={{ display:"flex", alignItems:"center", gap:1.5 }}>
                         <AutoAwesomeRoundedIcon sx={{ color:"#9b6dff" }} />
